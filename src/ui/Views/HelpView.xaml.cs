@@ -24,7 +24,7 @@ public partial class HelpView : UserControl
         catch { }
     }
 
-    private void Sponsor_Click(object sender, RoutedEventArgs e) => OpenUrl("https://github.com/sponsors/YOUR_GITHUB_USERNAME");
-    private void Patreon_Click(object sender, RoutedEventArgs e) => OpenUrl("https://patreon.com/YOUR_PATREON");
-    private void Kofi_Click(object sender, RoutedEventArgs e) => OpenUrl("https://ko-fi.com/YOUR_KOFI");
+    private void Sponsor_Click(object sender, RoutedEventArgs e) => OpenUrl("https://github.com/sponsors/adiixtech");
+    private void Patreon_Click(object sender, RoutedEventArgs e) => OpenUrl("https://patreon.com/adiixtech");
+    private void Kofi_Click(object sender, RoutedEventArgs e) => OpenUrl("https://ko-fi.com/adiixtech");
 }
