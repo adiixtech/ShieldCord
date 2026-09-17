@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
   <img src="installer/shieldcord.ico" width="128" height="128" alt="ShieldCord Logo">
   <h1>ShieldCord</h1>
   <p><strong>A defensive Windows security tool that blocks token-grabbers and infostealer malware from stealing Discord and browser tokens.</strong></p>
@@ -35,7 +35,12 @@ The easiest way to use ShieldCord is by downloading the pre-built, signed instal
 2. **Install** the application.
 3. Open the **ShieldCord UI** from your Start Menu or System Tray.
 4. **Enable Protection**: Click the "Setup Driver" button inside the app. 
-   - *Note: ShieldCord uses a test-signed driver. The app will ask you to restart your PC to allow test-signed drivers to load. Secure Boot must be disabled in your BIOS for this to work.*
+   
+> [!IMPORTANT]  
+> **Note on Test-Signing (Temporary Requirement)**  
+> This current release relies on a test-signed driver. To use it, you must temporarily disable Secure Boot and Memory Integrity, which lowers your baseline Windows security.  
+>   
+> **A fully signed, production-ready version is coming soon!** Once released, you will *no longer* need to use Test Mode or disable Memory Integrity to run ShieldCord.
 
 ## 💖 Support the Developer
 
