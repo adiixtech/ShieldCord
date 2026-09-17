@@ -1,12 +1,12 @@
-# Security Policy
+﻿# Security Policy
 
 ## Supported Versions
 ShieldCord is in active development. Only the latest release is supported with security updates. 
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.2.x   | :white_check_mark: |
-| < 1.2   | :x:                |
+| 1.2.x   | ✅ |
+| < 1.2   | ❌ |
 
 ## Reporting a Vulnerability
 
