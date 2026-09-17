@@ -40,7 +40,7 @@ The easiest way to use ShieldCord is by downloading the pre-built, signed instal
 > **Note on Test-Signing (Temporary Requirement)**  
 > This current release relies on a test-signed driver. To use it, you must temporarily disable Secure Boot and Memory Integrity, which lowers your baseline Windows security.  
 >   
-> **A fully signed, production-ready version is coming soon!** Once released, you will *no longer* need to use Test Mode or disable Memory Integrity to run ShieldCord.
+> **A fully signed, production-ready version is coming soon!** We are partnering with the **SignPath Foundation** to officially code-sign our Windows Kernel Driver. Once released, you will be able to run ShieldCord seamlessly without Test Mode, and you will *no longer* need to disable Memory Integrity or lower your Windows security.
 
 ## 💖 Support the Developer
 
