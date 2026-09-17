@@ -173,11 +173,13 @@
                     <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0" TextWrapping="Wrap"
                                Text="ShieldCord is completely free and open-source (GPLv3). I don't charge for the software or the protection it provides. If it saved your Discord account or you just want to support the project, please consider making a donation!"/>
                     
-                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                        <Button Content="Sponsor on GitHub" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" Click="Sponsor_Click"/>
-                        <Button Content="Patreon" Margin="0,0,8,0" Click="Patreon_Click"/>
-                        <Button Content="Ko-fi" Click="Kofi_Click"/>
-                    </StackPanel>
+                    <Border Background="{DynamicResource App.Control.Background}" CornerRadius="4" Padding="12" Margin="0,16,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⏳" Margin="0,0,8,0"/>
+                            <TextBlock Style="{StaticResource Body}" TextWrapping="Wrap"
+                                       Text="Payment methods are currently being set up. Support links (GitHub Sponsors, Patreon, Ko-fi) will be available in a future update. Thank you!"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 

@@ -6,7 +6,6 @@
   <p>
     <a href="https://github.com/adiixtech/ShieldCord/releases/latest"><img src="https://img.shields.io/github/v/release/adiixtech/ShieldCord?style=flat-square" alt="Latest Release"></a>
     <a href="https://github.com/adiixtech/ShieldCord/blob/main/LICENSE"><img src="https://img.shields.io/github/license/adiixtech/ShieldCord?style=flat-square" alt="License"></a>
-    <a href="https://github.com/sponsors/adiixtech"><img src="https://img.shields.io/badge/Sponsor-%E2%9D%A4-pink?style=flat-square" alt="Sponsor"></a>
   </p>
 </div>
 
@@ -44,9 +43,8 @@ ShieldCord is completely free and open-source under the GPLv3 license. I don't c
 
 If this tool saved your Discord account, or if you simply appreciate the hard work that went into it, please consider supporting the project! Your donations help pay for servers, coffee, and future development.
 
-- [💖 Sponsor me on GitHub](https://github.com/sponsors/adiixtech)
-- [☕ Buy me a Ko-fi](https://ko-fi.com/adiixtech)
-- [🟠 Support me on Patreon](https://patreon.com/adiixtech)
+> [!NOTE]
+> **Payment methods are currently being set up!** Links to GitHub Sponsors, Patreon, and Ko-fi will be available here soon. Thank you for your patience!
 
 ## 🛠️ Building from Source
 

@@ -24,7 +24,5 @@ public partial class HelpView : UserControl
         catch { }
     }
 
-    private void Sponsor_Click(object sender, RoutedEventArgs e) => OpenUrl("https://github.com/sponsors/adiixtech");
-    private void Patreon_Click(object sender, RoutedEventArgs e) => OpenUrl("https://patreon.com/adiixtech");
-    private void Kofi_Click(object sender, RoutedEventArgs e) => OpenUrl("https://ko-fi.com/adiixtech");
+    // Handlers will be restored when payment methods are configured.
 }
