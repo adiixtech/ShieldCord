@@ -1,0 +1,257 @@
+<UserControl x:Class="ShieldCordUI.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      Settings: what ShieldCord protects (read from the engine) and how this app
+      behaves (local preferences).
+
+      The two halves have different costs on purpose. Appearance and tray options
+      are local and instant, because making someone pass a UAC prompt to change a
+      theme would be absurd. Anything that changes what PROTECTION does is
+      privileged and goes through the elevated path — which is why the danger
+      zone at the bottom is the only card here that can weaken anything.
+    -->
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+        <StackPanel>
+
+            <TextBlock Text="Settings" Style="{StaticResource PageTitle}"/>
+
+            <!-- ══════════ this app ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <StackPanel>
+                    <TextBlock Text="This app" Style="{StaticResource H2}"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,14"
+                               Text="Display and tray preferences. None of these change what protection does, so none of them need administrator approval."/>
+
+                    <TextBlock Text="Theme" Style="{StaticResource Body}" Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                        <RadioButton Content="System" Style="{StaticResource Pill}"
+                                     IsChecked="{Binding IsThemeSystem, Mode=OneWay}"
+                                     Command="{Binding SetThemeCommand}" CommandParameter="system"/>
+                        <RadioButton Content="Light" Style="{StaticResource Pill}"
+                                     IsChecked="{Binding IsThemeLight, Mode=OneWay}"
+                                     Command="{Binding SetThemeCommand}" CommandParameter="light"/>
+                        <RadioButton Content="Dark" Style="{StaticResource Pill}"
+                                     IsChecked="{Binding IsThemeDark, Mode=OneWay}"
+                                     Command="{Binding SetThemeCommand}" CommandParameter="dark"/>
+                    </StackPanel>
+
+                    <CheckBox Style="{StaticResource Switch}" Margin="0,0,0,12"
+                              IsChecked="{Binding StartWithWindows}"
+                              Content="Start ShieldCord when I sign in"/>
+
+                    <CheckBox Style="{StaticResource Switch}" Margin="0,0,0,12"
+                              IsChecked="{Binding MinimizeToTrayOnClose}"
+                              Content="Closing the window keeps it running in the tray"/>
+
+                    <CheckBox Style="{StaticResource Switch}"
+                              IsChecked="{Binding WatermarkSuppressed}"
+                              Content="Hide the &quot;Test Mode&quot; watermark on the desktop"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Text="Windows is showing that reminder because test signing is on, which is what lets it load ShieldCord's own driver. Hiding it does not change that setting and needs no administrator approval. Turn this off to stop hiding it — the watermark returns the next time the shell starts."/>
+
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Text="{Binding WatermarkStatus}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ notifications ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="Notifications" Style="{StaticResource H2}"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,14" TextWrapping="Wrap"
+                               Text="What ShieldCord may pop up on your desktop. None of this changes what protection does — every detection is still recorded on the Activity page."/>
+
+                    <CheckBox Style="{StaticResource Switch}" Margin="0,0,0,12"
+                              IsChecked="{Binding MuteAllAlertNotifications}"
+                              Content="Turn off all notifications for alerts"/>
+
+                    <CheckBox Style="{StaticResource Switch}"
+                              IsChecked="{Binding NotifyCriticalOnly}"
+                              IsEnabled="{Binding CanChooseNotificationDetail}"
+                              Content="Only notify me about critical alerts"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Text="A critical alert is one ShieldCord acted on — a blocked file or a terminated process. Anything less serious is still listed on the Activity page; it just does not interrupt you."/>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ protected applications ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="Protected applications" Style="{StaticResource H2}"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,12"
+                               Text="Signed applications allowed to read their own token stores. Each is verified by publisher signature, not just by name — the same list drives the Protected Apps page."/>
+
+                    <ItemsControl ItemsSource="{Binding BuiltinApps}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Ellipse Width="7" Height="7" VerticalAlignment="Center"
+                                             Margin="0,0,10,0">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="{DynamicResource App.Border}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Running}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource App.Ok}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding ProcessName}" Style="{StaticResource Body}"
+                                                   FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Publisher}" Style="{StaticResource Muted}"/>
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Column="2" Text="{Binding AppTag}"
+                                               Style="{StaticResource Muted}"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,10,0,0"
+                               Text="The dot shows whether this application is running right now."/>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ trusted publishers ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="Publishers you added" Style="{StaticResource H2}"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,12"
+                               Text="Everything these publishers sign may read your tokens. Remove any you no longer recognise."/>
+
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,8"
+                               Text="None added. A signed program that gets blocked can be allowed from the Activity page."
+                               Visibility="{Binding HasNoTrustedPublishers, Converter={StaticResource BoolToVis}}"/>
+
+                    <ItemsControl ItemsSource="{Binding TrustedPublishers}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Publisher}" Style="{StaticResource Body}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <Button Grid.Column="1" Content="Remove"
+                                            Style="{StaticResource GhostButton}"
+                                            CommandParameter="{Binding}"
+                                            Command="{Binding DataContext.UntrustCommand,
+                                                      RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ protected paths ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="Protected paths" Style="{StaticResource H2}"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,12"
+                               Text="The kernel driver denies untrusted opens of anything matching these paths. This list is what the engine is actually enforcing."/>
+
+                    <ItemsControl ItemsSource="{Binding ProtectedPaths}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Label}" Style="{StaticResource Body}"
+                                               FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Suffix}"
+                                               Style="{StaticResource Muted}"
+                                               FontFamily="Consolas" FontSize="11"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ danger zone ══════════ -->
+            <Border Margin="0,12,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                        <Setter Property="BorderBrush" Value="{DynamicResource App.Danger}"/>
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <TextBlock Text="Turn protection off" Style="{StaticResource H2}"
+                               Foreground="{DynamicResource App.Danger}"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,14"
+                               Text="Switching protection off leaves your tokens readable by anything running on this PC. Do it only to diagnose a problem, and turn it back on afterwards."/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Turn protection off" Style="{StaticResource DangerButton}"
+                                Command="{Binding DisarmCommand}" Margin="0,0,8,0"/>
+                        <Button Content="Turn protection on" Style="{StaticResource PillButton}"
+                                Command="{Binding ReArmCommand}" Margin="0,0,8,0"/>
+                    </StackPanel>
+
+                    <!--
+                      Stopping the engine and turning it back on are one control
+                      in two states. Stopping is only possible while the pipe is
+                      up and starting only while it is down, so a button that
+                      swapped both label and action is always offering the one
+                      thing that can actually work.
+
+                      Previously this was a single "Stop the engine" that, once
+                      the engine was down, could not do anything at all — the
+                      verb had no pipe left to travel down — and there was no way
+                      back short of services.msc.
+                    -->
+                    <Grid Margin="0,12,0,0">
+                        <Button Content="Stop the engine" Style="{StaticResource GhostButton}"
+                                HorizontalAlignment="Left"
+                                Command="{Binding ShutdownCommand}"
+                                Visibility="{Binding CanStopEngine,
+                                             Converter={StaticResource BoolToVis}}"/>
+
+                        <Button Content="Turn the engine on" Style="{StaticResource PillButton}"
+                                HorizontalAlignment="Left"
+                                Command="{Binding StartEngineCommand}"
+                                Visibility="{Binding CanStartEngine,
+                                             Converter={StaticResource BoolToVis}}"/>
+
+                        <!-- Held disabled while the start is in flight, so it
+                             cannot be pressed twice during one UAC round trip. -->
+                        <Button Content="Starting the engine…" Style="{StaticResource PillButton}"
+                                HorizontalAlignment="Left" IsEnabled="False"
+                                Visibility="{Binding IsStartingEngine,
+                                             Converter={StaticResource BoolToVis}}"/>
+                    </Grid>
+
+                    <!-- Says which state the control is in, and why there is no
+                         button at all when the service is not installed. -->
+                    <TextBlock Text="{Binding EngineStateText}" Style="{StaticResource Muted}"
+                               Margin="0,10,0,0" TextWrapping="Wrap"/>
+
+                    <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}" Margin="0,10,0,0"
+                               Visibility="{Binding HasStatus, Converter={StaticResource BoolToVis}}"/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

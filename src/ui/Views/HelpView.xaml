@@ -1,0 +1,186 @@
+<UserControl x:Class="ShieldCordUI.Views.HelpView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:ShieldCordUI.Controls">
+
+    <!--
+      Help.
+
+      Static, and deliberately so: every statement here describes something the
+      engine actually does. There is no feature list of things ShieldCord would
+      like to do, because a security tool that overstates itself is worse than
+      one that says nothing.
+    -->
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+        <StackPanel>
+            <TextBlock Text="Help" Style="{StaticResource PageTitle}"/>
+            <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
+                       Text="What ShieldCord does, what its states mean, and what it deliberately does not do."/>
+
+            <!-- ══════════ setting it up ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <StackPanel>
+                    <TextBlock Text="Setting up the driver" Style="{StaticResource H2}"/>
+
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="ShieldCord's driver is not signed by Microsoft, so Windows will only load it once test signing is on. Setup switches that on, installs the driver, and then asks you to restart — Windows only reads the setting while booting."/>
+
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="Test signing lowers this PC's kernel security: it lets other drivers signed the same loose way load too. That is the trade for not paying for a Microsoft signature, and it is why setup asks rather than just doing it."/>
+
+                    <TextBlock Text="Two things must be off first" Style="{StaticResource Body}"
+                               FontWeight="SemiBold" Margin="0,14,0,0"/>
+
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0" TextWrapping="Wrap">
+                        <Run Text="Secure Boot" FontWeight="SemiBold"/>
+                        <Run Text=" — Windows refuses to change test signing while it is on. Turn it off in your PC's firmware settings (usually Security → Secure Boot), then come back. There is no way around this from inside Windows."/>
+                    </TextBlock>
+
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0" TextWrapping="Wrap">
+                        <Run Text="Memory Integrity" FontWeight="SemiBold"/>
+                        <Run Text=" — Windows refuses Microsoft-unsigned drivers even in test mode, so turning test signing on will not help. Open Windows Security → Device Security → Core Isolation and turn Memory Integrity off, then restart."/>
+                    </TextBlock>
+
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap"
+                               Text="Memory Integrity is the one people miss: with it on, setup appears to work, the PC restarts, and the driver still does not load — with no message anywhere saying why."/>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ what it protects ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="What it protects" Style="{StaticResource H2}"/>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0"
+                               Text="Discord and browser token and cookie stores — the credential files that a token grabber reads and uploads. Nothing else on this PC is covered by ShieldCord."/>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0"
+                               Text="Protection is physical, not cosmetic: a kernel minifilter driver denies the file open itself, so an infected or elevated process is refused at the same point any other program would be."/>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ how it decides ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="How it decides who is allowed" Style="{StaticResource H2}"/>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0"
+                               Text="By publisher signature, not by file name. A program is allowed to read its own token store only if it is signed by a publisher ShieldCord already trusts — so renaming a grabber to discord.exe does not get it through."/>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0"
+                               Text="You can add a publisher yourself when something legitimate gets blocked. Do that only when you recognise the publisher and are confident the block was a false alarm — it grants access to everything that publisher signs, now and in future."/>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ what the states mean ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="What the states mean" Style="{StaticResource H2}"/>
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Ellipse Width="8" Height="8" Fill="{DynamicResource App.Ok}"
+                                 VerticalAlignment="Top" Margin="0,5,12,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Protected" Style="{StaticResource Body}" FontWeight="SemiBold"/>
+                            <TextBlock Style="{StaticResource Muted}"
+                                       Text="The driver is loaded, enforcement is armed and file blocking is on. Untrusted processes are being denied."/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Ellipse Width="8" Height="8" Fill="{DynamicResource App.Warn}"
+                                 VerticalAlignment="Top" Margin="0,5,12,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Protection is off" Style="{StaticResource Body}" FontWeight="SemiBold"/>
+                            <TextBlock Style="{StaticResource Muted}"
+                                       Text="The driver is running but is not blocking. Your tokens are readable by anything on this PC. Turn enforcement back on in Protection controls."/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Ellipse Width="8" Height="8" Fill="{DynamicResource App.Danger}"
+                                 VerticalAlignment="Top" Margin="0,5,12,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Engine unreachable" Style="{StaticResource Body}" FontWeight="SemiBold"/>
+                            <TextBlock Style="{StaticResource Muted}"
+                                       Text="The service is not responding, so the true state is unknown. ShieldCord does not guess in this situation, and does not show a reassuring figure it cannot stand behind."/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ what you will see ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="What the events mean" Style="{StaticResource H2}"/>
+
+                    <TextBlock Style="{StaticResource Body}" Margin="0,10,0,0">
+                        <Run Text="blocked" FontWeight="SemiBold"/>
+                        <Run Text=" — a process was refused when it tried to open a protected file."/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0">
+                        <Run Text="terminated" FontWeight="SemiBold"/>
+                        <Run Text=" — a process was found holding a read handle into Discord or a browser, and was ended."/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0">
+                        <Run Text="kill failed" FontWeight="SemiBold"/>
+                        <Run Text=" — ShieldCord tried to end such a process and could not. Worth investigating."/>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0">
+                        <Run Text="detected" FontWeight="SemiBold"/>
+                        <Run Text=" — a memory read was seen but the process was not ended, because killing is disabled in this engine mode. The engine card on the dashboard says which mode is running."/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ what it does not do ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="What ShieldCord does not do" Style="{StaticResource H2}"/>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0"
+                               Text="It does not scan your PC, quarantine or delete files, update itself, or protect anything other than the token and cookie stores listed in Settings. It has no account, no subscription and no cloud service — nothing it knows leaves this machine."/>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0"
+                               Text="It assumes the machine may already be infected, which is why it denies access physically rather than trying to identify malware by appearance."/>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ honesty note ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <controls:AppMark Height="56" HorizontalAlignment="Left"/>
+                    <TextBlock Text="About the numbers on the dashboard" Style="{StaticResource H2}"
+                               Margin="0,12,0,0"/>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0"
+                               Text="&quot;Protection events&quot; is the engine's own counter for this run of the service. It counts everything the engine recorded: file opens it denied, processes it terminated, terminations that failed, and memory reads it only detected because killing was switched off. It is not a count of saved threats, and it resets when the service restarts."/>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0"
+                               Text="The event breakdown and the activity chart are different: they are computed from the events this app is currently holding, which is at most the most recent 500. Each of them says so underneath, and neither claims to cover more history than the app actually has — clearing the timeline empties them without implying the engine forgot anything."/>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ support ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="Support the Developer" Style="{StaticResource H2}"/>
+                    <TextBlock Style="{StaticResource Body}" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="ShieldCord is completely free and open-source (GPLv3). I don't charge for the software or the protection it provides. If it saved your Discord account or you just want to support the project, please consider making a donation!"/>
+                    
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <Button Content="Sponsor on GitHub" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" Click="Sponsor_Click"/>
+                        <Button Content="Patreon" Margin="0,0,8,0" Click="Patreon_Click"/>
+                        <Button Content="Ko-fi" Click="Kofi_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

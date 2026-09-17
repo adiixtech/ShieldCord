@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.2.0.0" name="ShieldCord.UI" />
+
+  <!--
+    asInvoker, NOT requireAdministrator.
+
+    The UI runs unelevated so it can sit in the tray and render live status
+    without a UAC prompt at every login. Reading status and receiving alerts
+    needs no privilege (the pipe ACL allows Authenticated Users), and the
+    engine rejects state-changing verbs from a non-elevated caller.
+
+    When the user flips a toggle, the UI relaunches ITSELF with the "runas"
+    verb for that one command — see Services/ElevatedHelper.cs. That is what
+    turns a requireAdministrator manifest into a per-action prompt.
+  -->
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 / 11 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+    </application>
+  </compatibility>
+
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <!-- PerMonitorV2: without this the window is blurry on a scaled display
+           and does not re-layout when dragged between monitors. -->
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+    </windowsSettings>
+  </application>
+</assembly>

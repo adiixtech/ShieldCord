@@ -1,0 +1,108 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      Light palette.
+
+      Every brush the app uses is keyed here, and every consumer references it
+      with DynamicResource so swapping this dictionary at runtime re-themes the
+      live window. Nothing in the views may hard-code a colour.
+
+      ── The elevation ladder ────────────────────────────────────────────────
+      The three big surfaces are spread across four evenly-spaced steps of
+      lightness rather than bunched at the top:
+
+          SurfaceSunken   #E6E8EB   91%   wells — switch tracks, search, chips
+          SurfaceAlt      #ECEEF1   93%   chrome — sidebar and top bar
+          Background      #F2F4F7   95%   the canvas the cards sit on
+          Surface         #FFFFFF  100%   cards — where the content is read
+
+      (Percentages are mean channel: across a near-white range, what the eye
+      reads as depth is lightness. The contrast ratios quoted below are the
+      real relative-luminance ones.)
+
+      An earlier version had SurfaceAlt, Surface and a #F7F8FB Background all
+      between 98% and 100%. Two things went wrong at once: the window emitted
+      near-maximum light over its whole area, which is fatiguing to sit in front
+      of, and a 1.16:1 card border on white left the cards reading as one flat
+      sheet instead of distinct panels. Reserving pure white for the cards is
+      what makes the structure legible — the card edge is now 1.39:1, and the
+      canvas it sits on is visibly a canvas.
+
+      The ordering is deliberate and matches Dark.xaml: SurfaceAlt is a recessed
+      variant of Surface, and SurfaceSunken is below both. Only the position of
+      Background differs between the themes, which is the usual dark-mode
+      inversion — in dark the canvas is the most recessed surface, in light it
+      sits just under the cards.
+
+      Pure white is fine — and correct — for the cards. It is the page-sized
+      expanses of it that cause the glare.
+
+      ── Why the neutrals are nearly neutral ─────────────────────────────────
+      These were first written blue-tinted — #E8EDF5 and friends, an R↔B
+      channel spread of 13. They are now spread 3-5, close to the near-neutral
+      greys that mature light themes settle on (#F3F3F5 in Willow, #F5F4F0 in
+      Flow — both measured off screenshots rather than eyeballed).
+
+      That is not only taste. The accent is ALREADY blue (#2C6FD1), so a
+      blue-cast canvas puts the accent in competition with its own background
+      and blunts it. Against a neutral grey the blue reads unmistakably as the
+      colour, which is what an accent is for. A whisper of cool is kept — these
+      are not dead grey — because they sit under a blue accent, and a fully
+      neutral field under a blue accent reads as unfinished.
+    -->
+
+    <SolidColorBrush x:Key="App.Background"  Color="#F2F4F7"/>
+    <SolidColorBrush x:Key="App.Surface"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="App.SurfaceAlt"  Color="#ECEEF1"/>
+    <SolidColorBrush x:Key="App.SurfaceSunken" Color="#E6E8EB"/>
+    <!-- Sits at 1.28:1 against the canvas and 1.39:1 against a card: a hairline
+         that is actually visible, which the old #E3E7EF was not. -->
+    <SolidColorBrush x:Key="App.Border"      Color="#D8DBDF"/>
+    <SolidColorBrush x:Key="App.BorderSoft"  Color="#E9EBEE"/>
+    <!-- 8% black rather than 6%: an overlay has to hold up on the darker canvas
+         and sidebar as well as on a white card, and 6% disappeared on the two. -->
+    <SolidColorBrush x:Key="App.Hover"       Color="#14000000"/>
+    <SolidColorBrush x:Key="App.Selected"    Color="#1A2C6FD1"/>
+
+    <!-- #1B2029, not near-black: 16.4:1 on a card and 14.8:1 on the canvas.
+         Maximum contrast is not the same thing as comfortable contrast, and the
+         letter edges are where that shows up. -->
+    <SolidColorBrush x:Key="App.Text"        Color="#1B2029"/>
+    <!-- #58616F clears 4.5:1 on every surface it lands on (6.2:1 on a card,
+         5.7:1 on the canvas, 5.3:1 on the sidebar, 5.0:1 on a switch track),
+         where the old #6B7280 fell to 4.4:1 against the canvas. -->
+    <SolidColorBrush x:Key="App.TextMuted"   Color="#58616F"/>
+    <SolidColorBrush x:Key="App.TextInverse" Color="#FFFFFF"/>
+
+    <SolidColorBrush x:Key="App.Accent"      Color="#2C6FD1"/>
+    <SolidColorBrush x:Key="App.AccentHover" Color="#1F5FBF"/>
+    <!-- Light enough to read as a *selected* tint against the sidebar at 84%
+         (the nav row has no border to help it) while still sitting above the
+         90% canvas for the filter pills. The old #E8F0FC was level with the new
+         canvas and would have vanished into it. -->
+    <SolidColorBrush x:Key="App.AccentSoft"  Color="#ECF3FE"/>
+
+    <SolidColorBrush x:Key="App.Ok"          Color="#15803D"/>
+    <SolidColorBrush x:Key="App.OkSoft"      Color="#E7F6EC"/>
+    <SolidColorBrush x:Key="App.Warn"        Color="#B45309"/>
+    <SolidColorBrush x:Key="App.WarnSoft"    Color="#FDF3E2"/>
+    <SolidColorBrush x:Key="App.Danger"      Color="#B91C1C"/>
+    <SolidColorBrush x:Key="App.DangerHover" Color="#991B1B"/>
+    <SolidColorBrush x:Key="App.DangerSoft"  Color="#FDECEC"/>
+
+    <!-- Chart series — the four actions an alert can carry, in the order the
+         donut and its legend render them: blocked, killed, kill_failed,
+         detected_only. These are their own keys rather than reuses of
+         Ok/Warn/Danger because a chart needs four hues that stay distinct from
+         each other at a few pixels wide, not semantic colours that also have
+         to stay legible as small text. Unchanged by the surface rework: they
+         sit on cards, which are still white. -->
+    <SolidColorBrush x:Key="App.Chart1"      Color="#2C6FD1"/>
+    <SolidColorBrush x:Key="App.Chart2"      Color="#8B5CF6"/>
+    <SolidColorBrush x:Key="App.Chart3"      Color="#F5B301"/>
+    <SolidColorBrush x:Key="App.Chart4"      Color="#A21CAF"/>
+
+    <SolidColorBrush x:Key="App.Shadow"      Color="#33000000"/>
+
+</ResourceDictionary>

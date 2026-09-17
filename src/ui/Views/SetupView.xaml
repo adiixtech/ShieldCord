@@ -1,0 +1,327 @@
+<UserControl x:Class="ShieldCordUI.Views.SetupView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:ShieldCordUI.Controls">
+
+    <!--
+      Setup, in three screens that replace the whole window's contents.
+
+        1. Welcome  — what this is, and one button to start.
+        2. Steps    — the checklist, one step at a time.
+        3. Complete — everything is up; one button into the dashboard.
+
+      All three live here and are switched by SetupViewModel.Stage rather than
+      being three views, because they are one continuous experience and splitting
+      them would mean three view models passing state around for no gain.
+
+      The window itself never changes — only what is drawn inside it.
+    -->
+
+    <Grid>
+
+        <!-- ════════════════════════════════════════════════════════════
+             SCREEN 1 — Welcome
+             ════════════════════════════════════════════════════════════ -->
+        <Grid Visibility="{Binding IsWelcome, Converter={StaticResource BoolToVis}}">
+            <Grid.RenderTransform>
+                <TranslateTransform/>
+            </Grid.RenderTransform>
+            <Grid.Triggers>
+                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                    <BeginStoryboard Storyboard="{StaticResource Motion.EnterFadeUp}"/>
+                </EventTrigger>
+            </Grid.Triggers>
+
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                        MaxWidth="520" Margin="40">
+
+                <!-- The hero: the product mark on a large soft accent disc.
+                     Drawn from the live theme rather than a bitmap, so it follows a
+                     theme switch and uses the same accent as everything else. A
+                     photographic image would be the one asset in the app that
+                     ignores the palette. -->
+                <Border Width="168" Height="168" CornerRadius="84"
+                        Background="{DynamicResource App.AccentSoft}"
+                        HorizontalAlignment="Center">
+                    <controls:AppMark Height="96"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <TextBlock Text="Set up ShieldCord" FontSize="26" FontWeight="Bold"
+                           Foreground="{DynamicResource App.Text}"
+                           HorizontalAlignment="Center" Margin="0,22,0,0"/>
+
+                <TextBlock Style="{StaticResource Muted}" TextAlignment="Center" TextWrapping="Wrap"
+                           Margin="0,10,0,0" FontSize="13"
+                           Text="ShieldCord blocks token stealers by denying access to your Discord and browser token files at the kernel level. That needs a driver, and Windows needs two settings changed before it will load."/>
+
+                <Button Content="Set up protection"
+                        Style="{StaticResource SolidPillButton}"
+                        FontSize="13" Padding="34,11"
+                        HorizontalAlignment="Center" Margin="0,26,0,0"
+                        Command="{Binding BeginCommand}"/>
+
+                <Button Content="I'll do this later"
+                        Style="{StaticResource GhostButton}"
+                        HorizontalAlignment="Center" Margin="0,10,0,0"
+                        Command="{Binding DeferCommand}"/>
+
+                <TextBlock Style="{StaticResource Muted}" TextAlignment="Center" TextWrapping="Wrap"
+                           Margin="0,18,0,0" FontSize="11"
+                           Text="Setup needs Administrator approval and one restart. It takes about a minute."/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ════════════════════════════════════════════════════════════
+             SCREEN 2 — the checklist
+             ════════════════════════════════════════════════════════════ -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsSteps, Converter={StaticResource BoolToVis}}">
+            <Grid>
+                <Grid.RenderTransform>
+                    <TranslateTransform/>
+                </Grid.RenderTransform>
+                <Grid.Triggers>
+                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                        <BeginStoryboard Storyboard="{StaticResource Motion.EnterFadeUp}"/>
+                    </EventTrigger>
+                </Grid.Triggers>
+
+                <StackPanel MaxWidth="620" HorizontalAlignment="Center" Margin="40,28,40,40">
+
+                    <TextBlock Text="Setting up" Style="{StaticResource PageTitle}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Summary}" Style="{StaticResource Muted}"
+                               TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,0"/>
+
+                    <Border Style="{StaticResource Card}" Margin="0,20,0,0" Padding="6">
+                        <ItemsControl x:Name="Steps" ItemsSource="{Binding Steps}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid controls:Stagger.On="True" Margin="0,2">
+                                        <Grid.RenderTransform>
+                                            <TranslateTransform/>
+                                        </Grid.RenderTransform>
+
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Grid.Column="0" Width="22" Height="22" CornerRadius="11"
+                                                Margin="10,0,0,0" VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{DynamicResource App.SurfaceSunken}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding State}" Value="Done">
+                                                            <Setter Property="Background" Value="{DynamicResource App.OkSoft}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding State}" Value="Active">
+                                                            <Setter Property="Background" Value="{DynamicResource App.AccentSoft}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding State}" Value="Blocked">
+                                                            <Setter Property="Background" Value="{DynamicResource App.DangerSoft}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding State}" Value="Failed">
+                                                            <Setter Property="Background" Value="{DynamicResource App.DangerSoft}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+
+                                            <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value=""/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding State}" Value="Done">
+                                                                <Setter Property="Text" Value="&#xE73E;"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource App.Ok}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding State}" Value="Blocked">
+                                                                <Setter Property="Text" Value="&#xE7BA;"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource App.Danger}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding State}" Value="Failed">
+                                                                <Setter Property="Text" Value="&#xE783;"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource App.Danger}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+
+                                        <TextBlock Grid.Column="1" Text="{Binding Number}"
+                                                   Style="{StaticResource Muted}" FontSize="11"
+                                                   Width="18" TextAlignment="Center"
+                                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+                                        <TextBlock Grid.Column="2" Text="{Binding Title}"
+                                                   VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource App.Text}"/>
+                                                    <Setter Property="FontSize" Value="13"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding State}" Value="Pending">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.TextMuted}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding State}" Value="Active">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.Accent}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding State}" Value="Blocked">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.Danger}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding State}" Value="Failed">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.Danger}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <TextBlock Grid.Column="3" Text="{Binding Status}"
+                                                   Style="{StaticResource Muted}" FontSize="11"
+                                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                                        <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"
+                                                    Margin="26,6,12,10"
+                                                    Visibility="{Binding ShowsDetail,
+                                                                 Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Body}"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource App.TextMuted}"/>
+
+                                            <Button Content="{Binding ActionText}"
+                                                    Style="{StaticResource PillButton}"
+                                                    HorizontalAlignment="Left" Margin="0,12,0,0"
+                                                    Visibility="{Binding HasAction,
+                                                                 Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.RunActionCommand,
+                                                              RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                    <!-- Working -->
+                    <Border Style="{StaticResource Card}" Margin="0,12,0,0"
+                            Visibility="{Binding ShowProgress, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <Grid Width="28" Height="28" Margin="0,0,14,0" VerticalAlignment="Center">
+                                <Ellipse Stroke="{DynamicResource App.BorderSoft}" StrokeThickness="3"/>
+                                <Ellipse Stroke="{DynamicResource App.Accent}" StrokeThickness="3"
+                                         StrokeDashArray="8 100" StrokeDashCap="Round"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform/>
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.Triggers>
+                                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                     From="0" To="360" Duration="0:0:1"
+                                                                     RepeatBehavior="Forever"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+                            </Grid>
+
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Setting up" Style="{StaticResource Body}" FontWeight="SemiBold"/>
+                                <TextBlock Text="Approve the Administrator prompt, then leave this window open."
+                                           Style="{StaticResource Muted}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Countdown. Cancel lives here rather than on the step, because
+                         while a restart is scheduled cancelling is the only thing
+                         worth offering. -->
+                    <Border Style="{StaticResource Card}" Margin="0,12,0,0"
+                            Background="{DynamicResource App.WarnSoft}"
+                            Visibility="{Binding ShowCountdown, Converter={StaticResource BoolToVis}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding CountdownText}" Style="{StaticResource H2}"/>
+                                <TextBlock Text="Save anything you are working on. ShieldCord finishes by itself when Windows comes back."
+                                           Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <Button Grid.Column="1" Content="Cancel restart"
+                                    Style="{StaticResource SecondaryButton}"
+                                    VerticalAlignment="Center" Margin="16,0,0,0"
+                                    Command="{Binding RunActionCommand}"/>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap"
+                               TextAlignment="Center" FontSize="11" Margin="0,16,0,0"
+                               Text="If the driver still does not load, Event Viewer → Windows Logs → System will have a CodeIntegrity entry naming the reason."/>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- ════════════════════════════════════════════════════════════
+             SCREEN 3 — Complete
+             ════════════════════════════════════════════════════════════ -->
+        <Grid Visibility="{Binding IsComplete, Converter={StaticResource BoolToVis}}">
+            <Grid.RenderTransform>
+                <TranslateTransform/>
+            </Grid.RenderTransform>
+            <Grid.Triggers>
+                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                    <BeginStoryboard Storyboard="{StaticResource Motion.EnterFadeUp}"/>
+                </EventTrigger>
+            </Grid.Triggers>
+
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                        MaxWidth="520" Margin="40">
+
+                <Border Width="168" Height="168" CornerRadius="84"
+                        Background="{DynamicResource App.OkSoft}"
+                        HorizontalAlignment="Center">
+                    <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="64"
+                               Foreground="{DynamicResource App.Ok}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <TextBlock Text="You're protected" FontSize="26" FontWeight="Bold"
+                           Foreground="{DynamicResource App.Text}"
+                           HorizontalAlignment="Center" Margin="0,22,0,0"/>
+
+                <TextBlock Style="{StaticResource Muted}" TextAlignment="Center" TextWrapping="Wrap"
+                           Margin="0,10,0,0" FontSize="13"
+                           Text="The driver is running and untrusted programs are denied access to your Discord and browser token files."/>
+
+                <Button Content="Open the dashboard"
+                        Style="{StaticResource SolidPillButton}"
+                        FontSize="13" Padding="34,11"
+                        HorizontalAlignment="Center" Margin="0,26,0,0"
+                        Command="{Binding AcknowledgeCommand}"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

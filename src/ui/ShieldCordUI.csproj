@@ -1,0 +1,72 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <!-- The engine's DriverClient::TrustSelf() (src/service/driver_client.cpp)
+         looks for a process named exactly "shieldcordui.exe" so it can trust
+         the UI for the decoy folder. Renaming this without renaming that
+         string means the UI gets blocked by the driver it displays. -->
+    <AssemblyName>shieldcordui</AssemblyName>
+    <RootNamespace>ShieldCordUI</RootNamespace>
+
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!--
+      The icon File Explorer, the taskbar and Alt-Tab all show, and the same one
+      Setup.exe uses.
+
+      Generated from the app's own mark (Controls/AppMark.xaml) by
+      tools\make_artwork.ps1, which build_all.ps1 runs BEFORE this project is
+      published — hence the path reaching out of the project rather than a copy
+      living here. One file, one source of truth; a second copy would be the one
+      that goes stale.
+    -->
+    <ApplicationIcon>..\..\installer\shieldcord.ico</ApplicationIcon>
+
+    <!-- Keep in sync with SC_VERSION in src/shared/common.h and AppVersion
+         in installer/shieldcord.iss. -->
+    <Version>1.2.0</Version>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
+    <Product>ShieldCord</Product>
+    <Company>ShieldCord</Company>
+    <Description>Protects Discord and browser tokens from grabber malware.</Description>
+    <Copyright>ShieldCord</Copyright>
+
+    <!-- No NuGet dependencies on purpose: everything this app needs ships in
+         .NET itself. One fewer thing for the installer to get wrong. -->
+
+    <!--
+      WFO0003 tells WinForms apps to move DPI awareness out of the manifest and
+      into Application.SetHighDpiMode. That advice does not apply here: this is
+      a WPF app that uses WinForms only for NotifyIcon, and WPF takes its DPI
+      awareness from the manifest (PerMonitorV2). Removing it would make the
+      whole window blurry on a scaled display.
+
+      WPF0001 (the experimental ThemeMode API) was suppressed here while the
+      Fluent theme was driven by ThemeMode. That is gone — see ApplyTheme in
+      App.xaml.cs for why it broke the palette swap — so the suppression is
+      removed too rather than left to hide a future use of an unstable API.
+    -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    UseWindowsForms gives us NotifyIcon for the tray, but it also makes the SDK
+    emit `global using System.Windows.Forms;` and `global using System.Drawing;`.
+    Those collide with WPF on Application, UserControl, Clipboard, Point… so
+    drop the implicit usings and let the one file that needs WinForms
+    (Services/TrayIcon.cs) import it explicitly.
+  -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+</Project>

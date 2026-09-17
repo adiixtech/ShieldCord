@@ -1,0 +1,66 @@
+<Application x:Class="ShieldCordUI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ShieldCordUI.ViewModels"
+             xmlns:views="clr-namespace:ShieldCordUI.Views"
+             ShutdownMode="OnExplicitShutdown">
+
+    <!--
+      ShutdownMode is OnExplicitShutdown because the app lives in the tray:
+      closing the window must not end the process, and the one-shot elevated
+      helper mode (see ElevatedVerbMode) never opens a window at all.
+
+      NO ThemeMode HERE. It was tried and removed: setting ThemeMode makes WPF
+      MERGE ITS OWN Fluent dictionary into Application.Resources — at index 0,
+      ahead of everything declared below — and re-merge it on every change. That
+      broke the one contract this file's layout depends on ("index 0 is the
+      theme dictionary"), so the palette swap silently replaced Fluent instead
+      of the palette, and the theme never changed. It also grew the merged list
+      by one dictionary per theme change.
+
+      The Fluent dictionary is merged explicitly by App.ApplyTheme instead, as
+      one of two slots it looks up BY SOURCE rather than by index. See the long
+      note there.
+    -->
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Index 0 is the theme dictionary. App.ApplyTheme() finds this
+                     slot by its Source (not by index — see the note above) and
+                     replaces it. Everything downstream uses DynamicResource, so
+                     the swap re-colours the live window. -->
+                <ResourceDictionary Source="Themes/Light.xaml"/>
+                <!-- Motion tokens, before Controls.xaml: the control styles
+                     reference these by StaticResource, and static lookup within
+                     a merged set resolves in order. -->
+                <ResourceDictionary Source="Themes/Motion.xaml"/>
+                <ResourceDictionary Source="Themes/Controls.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- View-model to view mapping: the shell's ContentControl just
+                 binds to a view-model instance and WPF picks the view.
+                 These are matched by the EXACT CLR type of the bound instance —
+                 they are keyless, so renaming or moving a view model silently
+                 starts rendering its ToString() instead, with no error. -->
+            <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+                <views:DashboardView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:AlertsViewModel}">
+                <views:AlertsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ProtectedAppsViewModel}">
+                <views:ProtectedAppsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <views:SettingsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:HelpViewModel}">
+                <views:HelpView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SetupViewModel}">
+                <views:SetupView/>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

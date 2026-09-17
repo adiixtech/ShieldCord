@@ -1,0 +1,25 @@
+﻿# CMake & Visual Studio builds
+build/
+build_driver/
+dist/
+.vs/
+out/
+*.sln
+*.suo
+*.user
+*.pdb
+*.idb
+
+# C# UI / .NET
+src/ui/bin/
+src/ui/obj/
+
+# Temporary / OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# User-specific tools
+.agents/
+.remember/

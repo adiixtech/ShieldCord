@@ -1,0 +1,66 @@
+; shieldcord_filter.inf — ShieldCord Kernel Minifilter Driver
+;
+; Registers shieldcord_filter.sys with the Windows Filter Manager.
+; Standard Filesystem Minifilter INF template.
+
+[Version]
+Signature   = "$Windows NT$"
+Class       = "ActivityMonitor"
+ClassGuid   = {b86dff51-a31e-4bac-b3cf-e8cfe75c9fc2}
+Provider    = %ManufacturerName%
+DriverVer   = 09/02/2026,1.0.0.0
+CatalogFile = shieldcord_filter.cat
+
+[DestinationDirs]
+DefaultDestDir               = 12
+ShieldCordFilter.DriverFiles = 12
+
+[DefaultInstall.NTamd64]
+OptionDesc          = %ShieldCordFilter.ServiceDesc%
+CopyFiles           = ShieldCordFilter.DriverFiles
+
+[DefaultInstall.NTamd64.Services]
+AddService          = %ShieldCordFilter.ServiceName%,,ShieldCordFilter.Service
+
+[DefaultInstall]
+OptionDesc          = %ShieldCordFilter.ServiceDesc%
+CopyFiles           = ShieldCordFilter.DriverFiles
+
+[DefaultInstall.Services]
+AddService          = %ShieldCordFilter.ServiceName%,,ShieldCordFilter.Service
+
+[ShieldCordFilter.Service]
+DisplayName      = %ShieldCordFilter.ServiceName%
+Description      = %ShieldCordFilter.ServiceDesc%
+ServiceBinary    = %12%\%ShieldCordFilter.DriverName%
+Dependencies     = "FltMgr"
+ServiceType      = 2                            ; SERVICE_FILE_SYSTEM_DRIVER
+StartType        = 3                            ; SERVICE_DEMAND_START
+ErrorControl     = 1                            ; SERVICE_ERROR_NORMAL
+LoadOrderGroup   = "FSFilter Activity Monitor"
+AddReg           = ShieldCordFilter.AddRegistry
+
+[ShieldCordFilter.AddRegistry]
+HKR,,"SupportedFeatures",0x00010001,0x3
+HKR,"Instances","DefaultInstance",0x00000000,%DefaultInstance%
+HKR,"Instances\ShieldCordFilter Instance","Altitude",0x00000000,%FilterAltitude%
+HKR,"Instances\ShieldCordFilter Instance","Flags",0x00010001,0x0
+
+[ShieldCordFilter.DriverFiles]
+%ShieldCordFilter.DriverName%
+
+[SourceDisksFiles]
+shieldcord_filter.sys = 1,,
+
+[SourceDisksNames]
+1 = %DiskId1%,,,
+
+[Strings]
+ManufacturerName              = "ShieldCord"
+DiskId1                       = "ShieldCord Minifilter Driver Disk"
+ShieldCordFilter.ServiceName  = "ShieldCordFilter"
+ShieldCordFilter.DriverName   = "shieldcord_filter.sys"
+ShieldCordFilter.ServiceDesc  = "ShieldCord Kernel Minifilter - protects Discord and browser tokens"
+ShieldCordFilter.InstanceName = "ShieldCordFilter Instance"
+DefaultInstance               = "ShieldCordFilter Instance"
+FilterAltitude                = "385200"

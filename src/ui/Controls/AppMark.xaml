@@ -1,0 +1,50 @@
+<UserControl x:Class="ShieldCordUI.Controls.AppMark"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      The product mark: an application tile carrying a shield.
+
+      Deliberately generic. The mockup this design follows draws a laptop, a
+      desktop tower and a shelf of books — but ShieldCord protects credential
+      stores, and it has never inventoried the chassis, the peripherals or
+      anything else those drawings assert. A mark that says "an application,
+      protected" is the only one the engine can back up.
+
+      Drawn on a fixed 100x100 canvas inside a Viewbox so one definition serves
+      the hero card and the small grid cards without a second asset. The inner
+      Paths use Stretch=None (the default for Path) so both share one coordinate
+      space and stay registered with each other; stretching each independently
+      would scale them by their own bounds and pull the tick off the shield.
+    -->
+    <Viewbox Stretch="Uniform">
+        <Canvas Width="100" Height="100">
+
+            <!-- Soft backdrop, so the mark sits in the card rather than on it. -->
+            <Ellipse Canvas.Left="10" Canvas.Top="10" Width="80" Height="80"
+                     Fill="{DynamicResource App.AccentSoft}"/>
+
+            <!-- The application tile. -->
+            <Border Canvas.Left="25" Canvas.Top="25" Width="50" Height="50"
+                    CornerRadius="14"
+                    Background="{DynamicResource App.Accent}"/>
+
+            <!-- Shield, filled in the inverse text colour so it reads as a
+                 knockout against the tile in both themes. -->
+            <Path Canvas.Left="38" Canvas.Top="39"
+                  Data="M12 1 L21 4.5 V11 C21 17 17.2 21.4 12 23 C6.8 21.4 3 17 3 11 V4.5 Z"
+                  Fill="{DynamicResource App.TextInverse}"/>
+
+            <!-- Tick, stroked in the tile colour so it looks cut out of the
+                 shield. Same origin as the shield so the two stay aligned. -->
+            <Path Canvas.Left="38" Canvas.Top="39"
+                  Data="M8.6 11.7 L11 14.1 L15.7 9.4"
+                  Stroke="{DynamicResource App.Accent}"
+                  StrokeThickness="2.4"
+                  StrokeStartLineCap="Round"
+                  StrokeEndLineCap="Round"
+                  StrokeLineJoin="Round"/>
+
+        </Canvas>
+    </Viewbox>
+</UserControl>

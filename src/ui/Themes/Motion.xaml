@@ -1,0 +1,113 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      ════════════════════════════════════════════════════════════
+      Motion tokens.
+
+      Every animation in the app draws its duration and its curve from
+      here. That is the whole point: consistent timing is most of what
+      reads as "polished", and per-element durations invented on the
+      spot are most of what reads as "made by a programmer".
+
+      ════════════════════════════════════════════════════════════
+
+      THE ONE RULE (see CLAUDE.md for the long version):
+
+        Animate ONLY Opacity and RenderTransform (translate / scale /
+        rotate). Those are resolved on the composition thread and stay
+        smooth even when the UI thread is busy.
+
+        NEVER animate Width, Height, Margin, Padding or any *Alignment
+        property. Each frame of those runs a measure/arrange pass on the
+        UI thread — that is the stutter this file exists to avoid.
+    -->
+
+    <!-- ── durations ─────────────────────────────────────────
+         Entrances are fast. Anything past ~400ms stops reading as
+         "responsive" and starts reading as "slow". -->
+
+    <!-- Hover, press, colour changes. Fast enough to feel instant,
+         slow enough not to flicker. -->
+    <Duration x:Key="Motion.Instant">0:0:0.10</Duration>
+
+    <!-- The default for most things: entrances, toggles, nav. -->
+    <Duration x:Key="Motion.Fast">0:0:0.15</Duration>
+    <Duration x:Key="Motion.Normal">0:0:0.24</Duration>
+
+    <!-- Deliberate, attention-carrying moves. Use sparingly. -->
+    <Duration x:Key="Motion.Slow">0:0:0.36</Duration>
+
+    <!-- ── easings ───────────────────────────────────────────
+         Freezable, so a single instance can be shared by every
+         animation that references it. -->
+
+    <!-- Decelerate into place. The right default for entrances: the
+         element arrives quickly then settles. -->
+    <CubicEase x:Key="Motion.EaseOut" EasingMode="EaseOut"/>
+
+    <!-- For an element leaving, where it should accelerate away. -->
+    <CubicEase x:Key="Motion.EaseIn" EasingMode="EaseIn"/>
+
+    <!-- Symmetric. For A-to-B moves where both ends matter. -->
+    <CubicEase x:Key="Motion.EaseInOut" EasingMode="EaseInOut"/>
+
+    <!-- A gentle overshoot, for things that should feel physical —
+         the switch knob, a selection indicator. Amplitude stays low on
+         purpose: a big bounce is a toy, a small one is a material. -->
+    <BackEase x:Key="Motion.Emphasized" EasingMode="EaseOut" Amplitude="0.22"/>
+
+    <!-- ── reusable storyboards ──────────────────────────────
+         x:Shared="False" is required, not cosmetic: a Storyboard can only
+         belong to one clock at a time, so a single shared instance can be
+         started by exactly one trigger. Without it the second element to
+         reference one of these throws at runtime. Each reference below gets
+         its own instance.
+
+         Each also assumes the target element declares the matching
+         RenderTransform — a TranslateTransform for EnterFadeUp, a
+         ScaleTransform for the other two. A missing one fails at runtime
+         with "cannot resolve the property path". -->
+
+    <!-- Fade + rise. The standard entrance for a view, a card or a list row. -->
+    <Storyboard x:Key="Motion.EnterFadeUp" x:Shared="False">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1"
+                         Duration="{StaticResource Motion.Normal}"
+                         EasingFunction="{StaticResource Motion.EaseOut}"/>
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                         From="12" To="0"
+                         Duration="{StaticResource Motion.Normal}"
+                         EasingFunction="{StaticResource Motion.EaseOut}"/>
+    </Storyboard>
+
+    <!-- Fade + slight scale. For surfaces that should feel like they
+         arrive rather than appear — dialogs. -->
+    <Storyboard x:Key="Motion.EnterFadeScale" x:Shared="False">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1"
+                         Duration="{StaticResource Motion.Normal}"
+                         EasingFunction="{StaticResource Motion.EaseOut}"/>
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         From="0.97" To="1"
+                         Duration="{StaticResource Motion.Normal}"
+                         EasingFunction="{StaticResource Motion.EaseOut}"/>
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                         From="0.97" To="1"
+                         Duration="{StaticResource Motion.Normal}"
+                         EasingFunction="{StaticResource Motion.EaseOut}"/>
+    </Storyboard>
+
+    <!-- One-shot attention pulse, for a state that just became GOOD.
+         AutoReverse returns it to 1.0 rather than leaving it enlarged,
+         so it cannot drift the element out of place across repeats. -->
+    <Storyboard x:Key="Motion.SuccessPulse" x:Shared="False">
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                         From="1" To="1.12" Duration="0:0:0.16"
+                         AutoReverse="True" EasingFunction="{StaticResource Motion.EaseOut}"/>
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                         From="1" To="1.12" Duration="0:0:0.16"
+                         AutoReverse="True" EasingFunction="{StaticResource Motion.EaseOut}"/>
+    </Storyboard>
+
+</ResourceDictionary>

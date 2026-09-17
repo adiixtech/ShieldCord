@@ -1,0 +1,523 @@
+<UserControl x:Class="ShieldCordUI.Views.AlertsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:ShieldCordUI.Controls">
+
+    <!--
+      Activity.
+
+      The search field lives here rather than in the top bar. ShieldCord has
+      exactly one searchable collection, so a global box would have had to either
+      do nothing on four pages out of five or silently teleport the user to this
+      one on the first keystroke. Filtering the list it belongs to is the honest
+      version of the mockup's control.
+
+      The subtitle states how much of the feed is on screen, because a narrowed
+      list and a feed that has gone quiet look identical otherwise.
+    -->
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══════════ header ══════════ -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="Activity" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0">
+                        <Run Text="Showing"/>
+                        <Run Text="{Binding VisibleCount, Mode=OneWay}" FontWeight="SemiBold"/>
+                        <Run Text="of"/>
+                        <Run Text="{Binding TotalCount, Mode=OneWay}" FontWeight="SemiBold"/>
+                        <Run Text="events this app has recorded, newest first."/>
+                    </TextBlock>
+                </StackPanel>
+
+                <Grid Grid.Column="1" VerticalAlignment="Center" Margin="20,0,0,0">
+                    <!--
+                      The height is set, and that is the point.
+
+                      Left unset, this box measured 260x51 — a tall slab with the
+                      text floating in the vertical middle of it, which is what
+                      "the text sits in the middle of the textbox" turned out to
+                      mean. A search field is 34px; anything taller reads as a
+                      form field from another decade. The style keeps
+                      VerticalContentAlignment=Center so the text sits on the
+                      field's centreline rather than the box's.
+                    -->
+                    <TextBox x:Name="SearchInput" Style="{StaticResource SearchBox}"
+                             MinWidth="280" Height="34"
+                             Padding="33,0,34,0"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                               Foreground="{DynamicResource App.TextMuted}"
+                               HorizontalAlignment="Left" VerticalAlignment="Center"
+                               Margin="12,0,0,0" IsHitTestVisible="False"/>
+
+                    <!--
+                      Placeholder. WPF has no placeholder property, so this is an
+                      overlay whose visibility follows the box.
+
+                      Shown only while the box is BOTH empty and unfocused: the
+                      hint's job is to say what the field is for, and once the
+                      caret is in it the user has already worked that out — leaving
+                      it there puts text under the cursor that is not theirs.
+
+                      Stretch plus TextAlignment=Left rather than a left-aligned
+                      element: an auto-width TextBlock would take its full natural
+                      width and overflow a narrow field, where this one is
+                      constrained by the margins and trims.
+                    -->
+                    <!--
+                      36, not 33. The TextBox's own Padding is 33, but the first
+                      glyph does not land at 33: the border adds 1 and the text
+                      pipeline adds 2 of leading, so typing starts at 36 from the
+                      TextBox's edge. The hint is a sibling drawing at its own
+                      margin, so it has to be told that number or the two sit a
+                      couple of pixels apart — which is the visible symptom of a
+                      hint that does not line up with what you are about to type.
+                    -->
+                    <TextBlock Text="Search process, path, publisher…"
+                               Margin="36,0,36,0"
+                               HorizontalAlignment="Stretch" TextAlignment="Left"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" IsHitTestVisible="False">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+                                <Setter Property="TextWrapping" Value="NoWrap"/>
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding Text, ElementName=SearchInput}"
+                                                       Value=""/>
+                                            <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=SearchInput}"
+                                                       Value="False"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <!-- Clear, only when there is something to clear. -->
+                    <Button Style="{StaticResource IconButton}" Content="&#xE711;"
+                            FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Margin="0,0,1,0"
+                            ToolTip="Clear the search"
+                            Command="{Binding ClearSearchCommand}"
+                            Visibility="{Binding HasSearch, Converter={StaticResource BoolToVis}}"/>
+                </Grid>
+            </Grid>
+
+            <Grid Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- One-way from the filter string, so the pills reflect the
+                     view model rather than each holding its own opinion. -->
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Content="All" Style="{StaticResource Pill}" GroupName="AlertFilter"
+                                 IsChecked="{Binding Filter, Mode=OneWay,
+                                             Converter={StaticResource IsPage}, ConverterParameter=all}"
+                                 Command="{Binding SetFilterCommand}" CommandParameter="all"/>
+                    <RadioButton Content="Blocked" Style="{StaticResource Pill}" GroupName="AlertFilter"
+                                 IsChecked="{Binding Filter, Mode=OneWay,
+                                             Converter={StaticResource IsPage}, ConverterParameter=blocked}"
+                                 Command="{Binding SetFilterCommand}" CommandParameter="blocked"/>
+                    <RadioButton Content="Terminated" Style="{StaticResource Pill}" GroupName="AlertFilter"
+                                 IsChecked="{Binding Filter, Mode=OneWay,
+                                             Converter={StaticResource IsPage}, ConverterParameter=killed}"
+                                 Command="{Binding SetFilterCommand}" CommandParameter="killed"/>
+                    <RadioButton Content="Memory" Style="{StaticResource Pill}" GroupName="AlertFilter"
+                                 IsChecked="{Binding Filter, Mode=OneWay,
+                                             Converter={StaticResource IsPage}, ConverterParameter=memory}"
+                                 Command="{Binding SetFilterCommand}" CommandParameter="memory"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Clear search" Style="{StaticResource GhostButton}"
+                            Command="{Binding ClearSearchCommand}" Margin="0,0,6,0"
+                            Visibility="{Binding HasSearch, Converter={StaticResource BoolToVis}}"/>
+                    <Button Content="Clear timeline" Style="{StaticResource GhostButton}"
+                            Command="{Binding ClearCommand}"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <!-- ══════════ list + detail ══════════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="300"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Style="{StaticResource Card}" Padding="6">
+                <Grid>
+                    <ListBox Style="{StaticResource PlainListBox}"
+                             x:Name="AlertList"
+                             ItemContainerStyle="{StaticResource AlertItem}"
+                             ItemsSource="{Binding View}"
+                             SelectedItem="{Binding Selected}"
+                             SelectionMode="Extended"
+                             SelectionChanged="OnSelectionChanged"
+                             PreviewMouseRightButtonDown="OnRowRightButtonDown"
+                             ScrollViewer.CanContentScroll="True">
+
+                        <!--
+                          Keyboard, so the list behaves like a list.
+
+                          Ctrl+C and Ctrl+A are wired to the standard application
+                          commands rather than to raw key handlers: that is what
+                          makes the shortcuts discoverable to accessibility tools
+                          and consistent with every other Windows list.
+
+                          Ctrl+A is not free on a ListBox — only some controls
+                          implement SelectAll — so the CommandBinding below does the
+                          work. Without it the key would do nothing.
+                        -->
+                        <ListBox.InputBindings>
+                            <KeyBinding Key="C" Modifiers="Control" Command="Copy"/>
+                            <KeyBinding Key="A" Modifiers="Control" Command="SelectAll"/>
+                        </ListBox.InputBindings>
+
+                        <ListBox.CommandBindings>
+                            <CommandBinding Command="Copy"
+                                            Executed="OnCopyExecuted"
+                                            CanExecute="OnCopyCanExecute"/>
+                            <CommandBinding Command="SelectAll"
+                                            Executed="OnSelectAllExecuted"
+                                            CanExecute="OnSelectAllCanExecute"/>
+                        </ListBox.CommandBindings>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Staggered entrance: rows cascade in rather than
+                                     appearing as one block. See Controls/Stagger.cs
+                                     for why this one needs code.
+
+                                     Background="Transparent" is load-bearing, not
+                                     cosmetic: a Panel with no Background is invisible
+                                     to the mouse, so without it the reveal highlight
+                                     in Controls/Reveal.cs would never receive a
+                                     MouseMove. It paints nothing. -->
+                                <Grid controls:Stagger.On="True"
+                                      Background="Transparent"
+                                      controls:Reveal.On="True"
+                                      controls:Reveal.CornerRadius="6"
+                                      Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ListBox}}">
+                                    <Grid.RenderTransform>
+                                        <TranslateTransform/>
+                                    </Grid.RenderTransform>
+
+                                    <!--
+                                      Row context menu.
+
+                                      Tag above carries the view model, and the menu reads
+                                      it back through PlacementTarget. Both are necessary:
+                                      a ContextMenu lives in its own visual tree, so it
+                                      inherits neither the DataContext of the row (an
+                                      AlertRecord, which has no commands) nor the ListBox
+                                      above it — RelativeSource AncestorType cannot cross
+                                      the popup boundary. PlacementTarget.Tag is the one
+                                      route that resolves.
+
+                                      Every command here acts on the SELECTED record, which
+                                      is why the ListBox also selects on right-click (see
+                                      AlertsView.xaml.cs). Without that, right-clicking row B
+                                      while row A was selected would act on A.
+                                    -->
+                                    <Grid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Copy path (as detected)"
+                                                      Command="{Binding PlacementTarget.Tag.CopyPathCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <MenuItem Header="Copy as Windows path"
+                                                      Command="{Binding PlacementTarget.Tag.CopyWindowsPathCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      ToolTip="The C:\ form — what Explorer and a terminal accept"/>
+                                            <MenuItem Header="Copy all details"
+                                                      Command="{Binding PlacementTarget.Tag.CopyDetailsCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <Separator/>
+                                            <!-- "Remove from this list", not "delete from logs":
+                                                 the Activity list IS the engine's history, so there is
+                                                 no second place the record lives. This hides it here;
+                                                 the engine keeps its record and its count. -->
+                                            <MenuItem Header="Remove from this list"
+                                                      Command="{Binding PlacementTarget.Tag.DismissCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      ToolTip="Hides this detection. The engine's record and its count are unchanged."/>
+                                            <MenuItem Header="Restore removed detections"
+                                                      Command="{Binding PlacementTarget.Tag.RestoreDismissedCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <Separator/>
+                                            <!-- Terminate is deliberately NOT here. It is
+                                                 destructive, and one pixel below a copy action
+                                                 in a popup is how the wrong process gets killed.
+                                                 It stays a styled button in the detail panel. -->
+                                            <MenuItem Header="Trust this publisher"
+                                                      Command="{Binding PlacementTarget.Tag.TrustPublisherCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      ToolTip="Allow every program signed by this publisher. Undo it in Protected Apps or Settings."/>
+                                        </ContextMenu>
+                                    </Grid.ContextMenu>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Ellipse Width="7" Height="7" VerticalAlignment="Center"
+                                             Margin="0,0,10,0">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="{DynamicResource App.Accent}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Severity}" Value="high">
+                                                        <Setter Property="Fill" Value="{DynamicResource App.Danger}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Severity}" Value="warning">
+                                                        <Setter Property="Fill" Value="{DynamicResource App.Warn}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+
+                                    <!-- Rendered through the one shared parser, so
+                                         the list, the dashboard tile and the chart
+                                         bucketer can never disagree about when
+                                         something happened. -->
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Time, Converter={StaticResource AlertTimeFmt}}"
+                                               Style="{StaticResource Muted}"
+                                               FontFamily="Consolas" Margin="0,0,12,0"
+                                               VerticalAlignment="Center"/>
+
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Style="{StaticResource Body}" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <Run Text="{Binding ProcessName, Mode=OneWay}"/>
+                                            <Run Text="  ·  PID " Foreground="{DynamicResource App.TextMuted}"/>
+                                            <Run Text="{Binding Pid, Mode=OneWay}"
+                                                 Foreground="{DynamicResource App.TextMuted}"/>
+                                        </TextBlock>
+                                        <TextBlock Style="{StaticResource Muted}"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <!-- Element syntax, not Text="{Binding Path}":
+                                                 a bare `Path` inside a Binding is the
+                                                 Binding.Path property, not the model's Path field. -->
+                                            <TextBlock.Text>
+                                                <Binding Path="Path"/>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+
+                                    <Border Grid.Column="3" CornerRadius="9" Padding="8,2"
+                                            VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{DynamicResource App.WarnSoft}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Action}" Value="blocked">
+                                                        <Setter Property="Background" Value="{DynamicResource App.DangerSoft}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Action}" Value="killed">
+                                                        <Setter Property="Background" Value="{DynamicResource App.OkSoft}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Action}" Value="detected_only">
+                                                        <Setter Property="Background" Value="{DynamicResource App.SurfaceSunken}"/>
+                                                    </DataTrigger>
+                                                    <!-- Last, so it wins over "blocked". A self-healed
+                                                         trust race IS a block, but nothing is still
+                                                         denied, and a red BLOCKED badge under a blue
+                                                         dot would say two different things at once. -->
+                                                    <DataTrigger Binding="{Binding Severity}" Value="info">
+                                                        <Setter Property="Background" Value="{DynamicResource App.SurfaceSunken}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding Action, Converter={StaticResource ActionLabel}}"
+                                                   FontSize="10" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource App.Warn}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Action}" Value="blocked">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.Danger}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Action}" Value="killed">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.Ok}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Action}" Value="detected_only">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.TextMuted}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Severity}" Value="info">
+                                                            <Setter Property="Foreground" Value="{DynamicResource App.TextMuted}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Nothing has been recorded. The green tick is only honest
+                         while the engine is actually there to have recorded
+                         nothing; with it unreachable nothing is being recorded
+                         at all, and the reassuring reading is the wrong one. -->
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="28"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="&#xE783;"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource App.Danger}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding EmptyIsReassuring}" Value="True">
+                                            <Setter Property="Text" Value="&#xE72E;"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource App.Ok}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{Binding EmptyHeadline}" Style="{StaticResource Body}"
+                                   Margin="0,10,0,0" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding EmptyDetail}" Style="{StaticResource Muted}"
+                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                   MaxWidth="300"/>
+                    </StackPanel>
+
+                    <!-- Events exist, but none match. A different answer, so a
+                         different message. -->
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="26"
+                                   Foreground="{DynamicResource App.TextMuted}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Nothing matches." Style="{StaticResource Body}"
+                                   Margin="0,10,0,0" HorizontalAlignment="Center"/>
+                        <TextBlock Style="{StaticResource Muted}" HorizontalAlignment="Center"
+                                   TextAlignment="Center" MaxWidth="300"
+                                   Text="The feed still holds these events — the filter and search are what narrowed it."/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ══════════ detail ══════════ -->
+            <Border Grid.Column="2" Style="{StaticResource Card}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Event detail" Style="{StaticResource H2}"/>
+                        <TextBlock Text="{Binding SelectionSummary}" Style="{StaticResource Muted}"
+                                   Margin="0,8,0,0"/>
+
+                        <StackPanel Margin="0,14,0,0"
+                                    Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="WHEN" Style="{StaticResource Caption}"/>
+                            <TextBlock Text="{Binding Selected.Time, Converter={StaticResource AlertTimeFmt}}"
+                                       Style="{StaticResource Body}"
+                                       FontFamily="Consolas" Margin="0,2,0,10"/>
+
+                            <TextBlock Text="WHAT HAPPENED" Style="{StaticResource Caption}"/>
+                            <TextBlock Text="{Binding Selected.Message}" Style="{StaticResource Body}"
+                                       Margin="0,2,0,10"/>
+
+                            <StackPanel Margin="0,0,0,10"
+                                        Visibility="{Binding Selected.Path, Converter={StaticResource TextToVis}}">
+                                <TextBlock Text="PATH" Style="{StaticResource Caption}"/>
+
+                                <!-- Right-click target. The menu is the reason this
+                                     TextBlock is worth styling as selectable: the
+                                     raw value is a kernel device path, so the useful
+                                     actions are all about getting a usable form of it
+                                     out of the app. -->
+                                <TextBlock Text="{Binding Selected.Path}" Style="{StaticResource Body}"
+                                           FontFamily="Consolas" FontSize="11" TextWrapping="Wrap">
+                                    <TextBlock.ContextMenu>
+                                        <!-- PlacementTarget.DataContext, not a bare Binding:
+                                             a ContextMenu lives in its own visual tree, so it
+                                             does not inherit the DataContext of the element it
+                                             is attached to. Reaching through the placement
+                                             target is the form that always resolves. -->
+                                        <ContextMenu>
+                                            <MenuItem Header="Copy path (as detected)"
+                                                      Command="{Binding PlacementTarget.DataContext.CopyPathCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <MenuItem Header="Copy as Windows path"
+                                                      Command="{Binding PlacementTarget.DataContext.CopyWindowsPathCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      ToolTip="The C:\ form — what Explorer and a terminal accept"/>
+                                            <MenuItem Header="Copy all details"
+                                                      Command="{Binding PlacementTarget.DataContext.CopyDetailsCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <Separator/>
+                                            <MenuItem Header="Remove from this list"
+                                                      Command="{Binding PlacementTarget.DataContext.DismissCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      ToolTip="Hides this detection. The engine's record and its count are unchanged."/>
+                                            <MenuItem Header="Restore removed detections"
+                                                      Command="{Binding PlacementTarget.DataContext.RestoreDismissedCommand,
+                                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        </ContextMenu>
+                                    </TextBlock.ContextMenu>
+                                </TextBlock>
+
+                                <!-- The usable form, shown rather than hidden behind a
+                                     right-click: a path you cannot open is not much use,
+                                     and having to discover a menu to read it is worse. -->
+                                <TextBlock Text="{Binding SelectedWindowsPath}"
+                                           Style="{StaticResource Muted}"
+                                           FontFamily="Consolas" FontSize="11" TextWrapping="Wrap"
+                                           Margin="0,3,0,0"
+                                           Visibility="{Binding HasWindowsPath,
+                                                        Converter={StaticResource BoolToVis}}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10"
+                                        Visibility="{Binding Selected.Target, Converter={StaticResource TextToVis}}">
+                                <TextBlock Text="TARGET PROCESS" Style="{StaticResource Caption}"/>
+                                <TextBlock Text="{Binding Selected.Target}" Style="{StaticResource Body}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Separator Margin="0,4,0,12" Background="{DynamicResource App.BorderSoft}"/>
+
+                        <Button Content="Terminate this process" Style="{StaticResource DangerButton}"
+                                Command="{Binding KillCommand}" Margin="0,0,0,7"/>
+                        <Button Content="Trust this publisher" Style="{StaticResource PillButton}"
+                                Command="{Binding TrustPublisherCommand}" Margin="0,0,0,7"
+                                HorizontalAlignment="Left" MinWidth="160"
+                                ToolTip="Allow every program signed by this publisher. Undo it in Protected Apps or Settings."/>
+                        <Button Content="Copy path" Style="{StaticResource GhostButton}"
+                                Command="{Binding CopyPathCommand}" HorizontalAlignment="Left"/>
+
+                        <TextBlock Text="{Binding ActionMessage}" Style="{StaticResource Muted}"
+                                   Margin="0,12,0,0"
+                                   Visibility="{Binding HasActionMessage, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

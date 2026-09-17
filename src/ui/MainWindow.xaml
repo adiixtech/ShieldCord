@@ -1,0 +1,366 @@
+<Window x:Class="ShieldCordUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:ShieldCordUI.Controls"
+        Title="ShieldCord"
+        Width="1140" Height="780" MinWidth="940" MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        Background="{DynamicResource App.Background}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Ideal">
+
+    <!--
+      WindowChrome, not AllowsTransparency.
+
+      AllowsTransparency="True" (what this window used before) forces the whole
+      window onto a software rendering path and disables native Aero Snap, so
+      the window could be dragged but never snapped or maximised properly.
+      Real chrome gives us native drag, snap, double-click-to-maximise and
+      resize borders; CaptionHeight reserves the title strip for it and the
+      buttons opt back in with IsHitTestVisibleInChrome.
+
+      The sidebar spans BOTH rows, so the strip runs from the top-left corner.
+      Anything clickable that lives inside those first 44 pixels has to opt back
+      into hit testing, which is why the top-bar cluster does exactly that.
+    -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="44"
+                      ResizeBorderThickness="6"
+                      GlassFrameThickness="0"
+                      CornerRadius="0"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="44"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══════════ sidebar ══════════ -->
+        <Border Grid.Column="0" Grid.RowSpan="2"
+                Background="{DynamicResource App.SurfaceAlt}"
+                BorderBrush="{DynamicResource App.Border}" BorderThickness="0,0,1,0">
+            <Grid Margin="16,20,16,16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- brand -->
+                <StackPanel>
+                    <controls:AppMark Height="52" HorizontalAlignment="Center"/>
+                    <TextBlock Text="ShieldCord" FontSize="19" FontWeight="Bold"
+                               Foreground="{DynamicResource App.Text}"
+                               HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    <!-- NOT the mockup's "Complete Computer Protection": this is
+                         not an antivirus and does not protect a whole computer. -->
+                    <TextBlock Text="Protects Discord &amp; browser tokens"
+                               FontSize="10" TextAlignment="Center" TextWrapping="Wrap"
+                               Foreground="{DynamicResource App.TextMuted}" Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <!-- navigation -->
+                <StackPanel Grid.Row="1" Margin="0,26,0,0">
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav"
+                                 Tag="&#xE80F;" Content="Dashboard"
+                                 Command="{Binding NavigateCommand}" CommandParameter="Dashboard"
+                                 IsChecked="{Binding CurrentPage, Mode=OneWay,
+                                             Converter={StaticResource IsPage},
+                                             ConverterParameter=Dashboard}"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav"
+                                 Tag="&#xE81C;" Content="Activity"
+                                 Command="{Binding NavigateCommand}" CommandParameter="Alerts"
+                                 IsChecked="{Binding CurrentPage, Mode=OneWay,
+                                             Converter={StaticResource IsPage},
+                                             ConverterParameter=Alerts}"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav"
+                                 Tag="&#xE71D;" Content="Protected Apps"
+                                 Command="{Binding NavigateCommand}" CommandParameter="Apps"
+                                 IsChecked="{Binding CurrentPage, Mode=OneWay,
+                                             Converter={StaticResource IsPage},
+                                             ConverterParameter=Apps}"/>
+                    <!-- Only while setup is outstanding — the dashboard's own hero
+                         card is the way in once it has been deferred, so there is no
+                         sidebar entry: setup takes over the window rather than
+                         becoming a page you browse to. -->
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav"
+                                 Tag="&#xE713;" Content="Settings"
+                                 Command="{Binding NavigateCommand}" CommandParameter="Settings"
+                                 IsChecked="{Binding CurrentPage, Mode=OneWay,
+                                             Converter={StaticResource IsPage},
+                                             ConverterParameter=Settings}"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav"
+                                 Tag="&#xE897;" Content="Help"
+                                 Command="{Binding NavigateCommand}" CommandParameter="Help"
+                                 IsChecked="{Binding CurrentPage, Mode=OneWay,
+                                             Converter={StaticResource IsPage},
+                                             ConverterParameter=Help}"/>
+                </StackPanel>
+
+                <!-- engine state + version -->
+                <StackPanel Grid.Row="2">
+                    <Separator Background="{DynamicResource App.BorderSoft}" Margin="0,0,0,10"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Ellipse Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,7,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{DynamicResource App.Danger}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                            <Setter Property="Fill" Value="{DynamicResource App.Ok}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="{Binding ConnectionShort}"
+                                   Style="{StaticResource Muted}" TextWrapping="NoWrap"/>
+                    </StackPanel>
+
+                    <!-- The engine's own version, not a hard-coded one. Shows the
+                         em dash until the first status reply arrives. -->
+                    <TextBlock HorizontalAlignment="Center" Margin="0,6,0,0"
+                               FontSize="10" Foreground="{DynamicResource App.TextMuted}">
+                        <Run Text="Version:"/>
+                        <Run Text="{Binding Dashboard.VersionText, Mode=OneWay}"/>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════════ top bar ══════════ -->
+        <Grid Grid.Column="1" Grid.Row="0" Background="{DynamicResource App.SurfaceAlt}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Stretched, not centred: the caption buttons are the full 44px of
+                 this strip, and a centred 44px child inside a 44px row is the
+                 same thing spelled less clearly. -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Stretch"
+                        WindowChrome.IsHitTestVisibleInChrome="True">
+
+                <!-- bell + unread badge -->
+                <Grid Margin="0,0,14,0">
+                    <Button Style="{StaticResource IconButton}" Content="&#xE7E7;"
+                            Command="{Binding NavigateCommand}" CommandParameter="Alerts"
+                            ToolTip="Activity — what the engine has blocked and terminated"/>
+                    <Border Background="{DynamicResource App.Danger}" CornerRadius="8"
+                            MinWidth="16" Height="16" Padding="4,0"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,-3,-3,0"
+                            Visibility="{Binding HasUnread, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding UnreadBadge}" FontSize="9" FontWeight="Bold"
+                                   Foreground="{DynamicResource App.TextInverse}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+
+                <!-- who this window is running as. The account is read from the
+                     process token: ShieldCord has no user accounts of its own, so
+                     there is no invented persona to show here. -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <Border Width="32" Height="32" CornerRadius="16"
+                            Background="{DynamicResource App.AccentSoft}">
+                        <TextBlock Text="{Binding UserInitial}" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource App.Accent}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding UserName}" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource App.Text}"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="150"/>
+                        <TextBlock Text="{Binding UserRole}" FontSize="10"
+                                   Foreground="{DynamicResource App.TextMuted}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- window buttons -->
+                <Button Style="{StaticResource ChromeButton}" Content="&#xE921;"
+                        Click="Minimize_Click" ToolTip="Minimise"/>
+                <Button x:Name="MaximizeButton" Style="{StaticResource ChromeButton}"
+                        Content="&#xE922;" Click="Maximize_Click" ToolTip="Maximise"/>
+                <Button Style="{StaticResource CloseChromeButton}" Content="&#xE8BB;"
+                        Click="Close_Click" ToolTip="Close to tray"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ══════════ content ══════════ -->
+        <Grid Grid.Column="1" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!--
+              The action-feedback banner.
+
+              Its left edge is a solid colour block flush to the rounded corner,
+              which is the mockup's banner shape — but what it reports is real:
+              whether the change the user just asked for was accepted by the
+              engine. It is the loudest element on the page precisely because it
+              is the one that appears when a toggle has silently failed to take.
+            -->
+            <Border Grid.Row="0" Margin="24,18,24,0" CornerRadius="10" Padding="0"
+                    RenderTransformOrigin="0.5,0">
+                <!-- Declared on the element, not in the Style: a Freezable used as a
+                     Setter value is one shared instance, and animating it would be
+                     relying on there only ever being one banner. -->
+                <Border.RenderTransform>
+                    <TranslateTransform Y="-8"/>
+                </Border.RenderTransform>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource App.AccentSoft}"/>
+                        <!-- Collapsed by default. Visibility cannot be animated, so the
+                             entrance is Opacity + a transform, and Visibility is flipped
+                             by a setter at the same moment the fade begins.
+
+                             The EXIT is deliberately instant. This banner is dismissed by
+                             the user clicking Dismiss, and a control that lingers for
+                             200ms after you press it feels broken rather than smooth. -->
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Setter Property="Opacity" Value="0"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding BannerIsError}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource App.DangerSoft}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding HasBanner}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             To="1"
+                                                             Duration="{StaticResource Motion.Normal}"
+                                                             EasingFunction="{StaticResource Motion.EaseOut}"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             To="0"
+                                                             Duration="{StaticResource Motion.Normal}"
+                                                             EasingFunction="{StaticResource Motion.EaseOut}"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <!-- Reset, so the next banner animates in again
+                                         rather than appearing already at rest. -->
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             To="-8" Duration="0:0:0"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Width="52" CornerRadius="10,0,0,10">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{DynamicResource App.Accent}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding BannerIsError}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource App.Danger}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                                   Foreground="{DynamicResource App.TextInverse}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <TextBlock Grid.Column="1" Text="{Binding Banner}"
+                               Style="{StaticResource Body}" Margin="16,14"
+                               VerticalAlignment="Center"/>
+
+                    <Button Grid.Column="2" Content="Dismiss"
+                            Style="{StaticResource GhostButton}"
+                            Command="{Binding ClearBannerCommand}"
+                            Margin="0,0,10,0" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!--
+              View transitions.
+
+              NotifyOnTargetUpdated is what makes this work: it raises
+              Binding.TargetUpdated every time CurrentView changes, and the
+              EventTrigger below plays the entrance on the ContentControl
+              itself. Without it the page swap is an instant, jarring cut —
+              which is the single biggest giveaway of a form-style desktop app.
+
+              The animation is opacity + RenderTransform only (see the motion
+              rules in CLAUDE.md). Animating the margin here would re-run layout
+              every frame and turn a smooth transition into a stutter.
+            -->
+            <ContentControl Grid.Row="1" Margin="24,18,24,24"
+                            Content="{Binding CurrentView, NotifyOnTargetUpdated=True}">
+                <ContentControl.RenderTransform>
+                    <TranslateTransform/>
+                </ContentControl.RenderTransform>
+                <ContentControl.Triggers>
+                    <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                        <BeginStoryboard Storyboard="{StaticResource Motion.EnterFadeUp}"/>
+                    </EventTrigger>
+                </ContentControl.Triggers>
+            </ContentControl>
+        </Grid>
+
+        <!--
+          ══════════ setup takeover ══════════
+
+          The same window, entirely covered. Not a second Window, and not a page in
+          the navigation: setup is something you complete, and the sidebar, the
+          status footer and the nav are all noise until it is done.
+
+          RowSpan/ColumnSpan are set because this Grid has two of each — a child
+          with neither lands in the 200x44 top-left cell, which is how a previous
+          full-window overlay in this file ended up rendering as a small rectangle
+          of noise.
+
+          The window controls are repeated inside, because an opaque full-window
+          layer would otherwise bury the real ones and leave no way to minimise or
+          close to tray during setup.
+        -->
+        <Grid Grid.Row="0" Grid.RowSpan="99" Grid.Column="0" Grid.ColumnSpan="99"
+              Panel.ZIndex="100"
+              Background="{DynamicResource App.Background}"
+              Visibility="{Binding IsSetupMode, Converter={StaticResource BoolToVis}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="44"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right"
+                        WindowChrome.IsHitTestVisibleInChrome="True">
+                <Button Style="{StaticResource ChromeButton}" Content="&#xE921;"
+                        Click="Minimize_Click" ToolTip="Minimise"/>
+                <Button Style="{StaticResource CloseChromeButton}" Content="&#xE8BB;"
+                        Click="Close_Click" ToolTip="Close to tray"/>
+            </StackPanel>
+
+            <ContentControl Grid.Row="1" Content="{Binding SetupPage}"/>
+        </Grid>
+    </Grid>
+</Window>

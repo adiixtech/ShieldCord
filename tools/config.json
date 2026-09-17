@@ -1,0 +1,16 @@
+{
+    "memoryMonitorEnabled": true,
+    "tokenVaultEnabled": false,
+    "memoryPollIntervalMs": 200,
+    "appWatcherIntervalMs": 1000,
+    "logToFile": true,
+    "logToEventLog": false,
+    "driverEnforcementEnabled": true,
+    "driverFileBlockEnabled": true,
+    "driverAlertsEnabled": true,
+    "decoyFolderEnabled": true,
+    "decoyFolderPath": "C:\\ProgramData\\ShieldCord\\Decoy",
+
+    "trustedPublishers": [],
+    "trustedPaths": []
+}

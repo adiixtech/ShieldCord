@@ -1,0 +1,581 @@
+<UserControl x:Class="ShieldCordUI.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      Dashboard.
+
+      Every figure on this page is either a field the engine reported or a count
+      taken over the alert records the UI actually holds. Nothing here is
+      estimated, projected, or rounded up — and where a number could be read as
+      covering more than it does, the caption underneath it says what the window
+      really is.
+
+      Four bands, sized to fit the default window without scrolling: the verdict,
+      the figures, what the engine has been doing, and the switches. The layers
+      list that used to be its own card is now the dot row inside the verdict —
+      the banner already says whether protection is on, and the layers are why.
+    -->
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+        <StackPanel>
+
+            <TextBlock Text="Dashboard" Style="{StaticResource PageTitle}"/>
+
+            <!-- ══════════ the verdict ══════════ -->
+            <!-- The mockup's banner shape — a solid colour block flush to the
+                 rounded left corner — carrying the one thing the page has to say
+                 before anything else: whether tokens are actually protected.
+
+                 It is the single most important element here, so nothing about
+                 it is decorative: the strip colour, the block colour and the
+                 glyph all follow the engine's own status level, and the
+                 reassuring state requires DriverConnected AND enforcement AND
+                 file blocking. A driver that is up but blocking nothing shows
+                 amber, not green. -->
+            <Border Margin="0,12,0,0" CornerRadius="10" Padding="0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource App.AccentSoft}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusLevel}" Value="warn">
+                                <Setter Property="Background" Value="{DynamicResource App.WarnSoft}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding StatusLevel}" Value="off">
+                                <Setter Property="Background" Value="{DynamicResource App.DangerSoft}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- The icon block pulses once when protection comes ON.
+                         Driven from the code-behind rather than a DataTrigger on
+                         StatusLevel, because a trigger cannot tell "just became
+                         protected" from "was already protected when this view
+                         loaded" — and pulsing at every launch for something that
+                         did not just happen is exactly the kind of animation that
+                         teaches people to ignore animations. -->
+                    <Border x:Name="StatusIcon" Grid.RowSpan="2" Grid.Column="0" Width="48"
+                            CornerRadius="10,0,0,10"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Border.RenderTransform>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{DynamicResource App.Accent}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding StatusLevel}" Value="warn">
+                                        <Setter Property="Background" Value="{DynamicResource App.Warn}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding StatusLevel}" Value="off">
+                                        <Setter Property="Background" Value="{DynamicResource App.Danger}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+
+                        <!-- TextInverse is white in the light theme and near-black
+                             in the dark one, which is what keeps the glyph legible
+                             on all six block colours. -->
+                        <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="18"
+                                   Foreground="{DynamicResource App.TextInverse}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="&#xE72E;"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding StatusLevel}" Value="warn">
+                                            <Setter Property="Text" Value="&#xE7BA;"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding StatusLevel}" Value="off">
+                                            <Setter Property="Text" Value="&#xE783;"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+
+                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="14,10,14,0"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusHeadline}" Style="{StaticResource H2}"
+                                   FontSize="16"/>
+                        <TextBlock Text="{Binding StatusDetail}" Style="{StaticResource Muted}"
+                                   Margin="0,3,0,0"/>
+                    </StackPanel>
+
+                    <!-- Only "Turn protection on" ever appears. There is no
+                         retry button for the unreachable state because there is
+                         nothing useful for it to do: the pipe client reconnects
+                         on its own, and while the engine is deliberately stopped
+                         it is parked and not even trying. A button that cannot
+                         reconnect is worse than no button.
+
+                         "Set up protection" is the other one, and the two are
+                         mutually exclusive by construction: re-arming requires a
+                         connected driver, and setup only appears without one. -->
+                    <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal"
+                                VerticalAlignment="Center" Margin="0,10,16,0">
+                        <Button Content="Set up protection"
+                                Style="{StaticResource SolidPillButton}"
+                                Command="{Binding SetUpCommand}"
+                                Visibility="{Binding CanSetUp, Converter={StaticResource BoolToVis}}"/>
+                        <Button Content="Turn protection on"
+                                Style="{StaticResource SolidPillButton}"
+                                Command="{Binding ReArmCommand}"
+                                Visibility="{Binding CanReArm, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+
+                    <!-- ══════════ protection layers ══════════ -->
+                    <!-- The same rows the "Protection layers" card used to list,
+                         folded in beside the verdict they explain. Each row is
+                         reported separately by the engine and they are a stack —
+                         the ones below cannot work without the ones above — so a
+                         green dot here under an amber verdict is meaningful
+                         rather than contradictory.
+
+                         The engine's own sentence for each layer is the tooltip:
+                         the name alone ("File blocking") does not distinguish
+                         "denying opens" from "off — opens are allowed", and that
+                         distinction is the whole point of the row. -->
+                    <ItemsControl Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                  ItemsSource="{Binding Modules}" Margin="14,6,16,10">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,16,3"
+                                            ToolTip="{Binding Detail}">
+                                    <Ellipse Width="7" Height="7" VerticalAlignment="Center"
+                                             Margin="0,0,6,0">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="{DynamicResource App.Warn}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Healthy}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource App.Ok}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="{Binding Name}" FontSize="11"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource App.TextMuted}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Border>
+
+            <!-- ══════════ the figures ══════════ -->
+            <!-- One strip rather than four cards. The figures are four readings
+                 from the same engine at the same moment, so they read better
+                 side by side than as four separate surfaces with four borders
+                 between them. -->
+            <Border Style="{StaticResource Card}" Padding="16,8" Margin="0,12,0,0">
+                <UniformGrid Columns="4">
+
+                    <!-- Protection events.
+                         Labelled "events", not "threats blocked": the engine counts
+                         every record it appended, which includes terminations that
+                         FAILED and memory reads it only detected because killing was
+                         switched off. -->
+                    <StackPanel Margin="0,0,12,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="PROTECTION EVENTS" Style="{StaticResource Caption}"
+                                       VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="View" Padding="6,1" FontSize="11"
+                                    Style="{StaticResource GhostButton}"
+                                    ToolTip="Open the activity timeline"
+                                    Command="{Binding NavigateCommand}" CommandParameter="Alerts"/>
+                        </Grid>
+                        <TextBlock Text="{Binding ProtectionEventsText}"
+                                   Style="{StaticResource StatNumber}" Margin="0,3,0,0"/>
+                        <TextBlock Text="recorded since the engine started"
+                                   Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Text="RUNNING FOR" Style="{StaticResource Caption}"/>
+                        <TextBlock Text="{Binding UptimeText}"
+                                   Style="{StaticResource StatNumber}" Margin="0,3,0,0"/>
+                        <TextBlock Text="since the engine last started"
+                                   Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Text="TRUSTED APPS" Style="{StaticResource Caption}"/>
+                        <TextBlock Text="{Binding TrustedCountText}"
+                                   Style="{StaticResource StatNumber}" Margin="0,3,0,0"/>
+                        <TextBlock Text="signed apps running right now"
+                                   Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <!-- Engine build. The mode matters: console mode runs the memory
+                         monitor with killing disabled, so the same event count means
+                         something different. The hint only has anything to say in
+                         that mode, so the strip is only taller there. -->
+                    <StackPanel>
+                        <TextBlock Text="ENGINE" Style="{StaticResource Caption}"/>
+                        <TextBlock Text="{Binding VersionText}" Style="{StaticResource H2}"
+                                   FontSize="19" Margin="0,3,0,0"/>
+                        <TextBlock Text="{Binding ServiceModeText}" Style="{StaticResource Muted}"
+                                   FontSize="11" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding ServiceModeHint}" Style="{StaticResource Muted}"
+                                   FontSize="11" Margin="0,2,0,0"
+                                   Visibility="{Binding ServiceModeHint,
+                                                Converter={StaticResource TextToVis}}"/>
+                    </StackPanel>
+                </UniformGrid>
+            </Border>
+
+            <!-- ══════════ activity over time ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="Protection activity" Style="{StaticResource H2}"/>
+                            <TextBlock Text="{Binding TrafficCaption}" Style="{StaticResource Muted}"
+                                       FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <!-- One-way IsChecked, driven by the range string, for the
+                             same reason the sidebar works this way: three
+                             two-way buttons over one source of truth fight each
+                             other. No "Monthly" option — the engine has no
+                             aggregation modes, so a control that changed nothing
+                             would be a lie. -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                            <RadioButton Content="24 hours" Style="{StaticResource Pill}"
+                                         GroupName="TrafficRange"
+                                         IsChecked="{Binding IsTraffic24h, Mode=OneWay}"
+                                         Command="{Binding SetTrafficRangeCommand}"
+                                         CommandParameter="24h"/>
+                            <RadioButton Content="7 days" Style="{StaticResource Pill}"
+                                         GroupName="TrafficRange"
+                                         IsChecked="{Binding IsTraffic7d, Mode=OneWay}"
+                                         Command="{Binding SetTrafficRangeCommand}"
+                                         CommandParameter="7d"/>
+                            <RadioButton Content="30 days" Style="{StaticResource Pill}"
+                                         GroupName="TrafficRange"
+                                         IsChecked="{Binding IsTraffic30d, Mode=OneWay}"
+                                         Command="{Binding SetTrafficRangeCommand}"
+                                         CommandParameter="30d"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- The plot, axis labels included in its fixed height: the
+                         labels belong to the chart, and giving them their own
+                         band above meant the two could be separated by a
+                         scrolling boundary that neither of them owns. -->
+                    <Grid Height="112" Margin="0,16,0,0"
+                          Visibility="{Binding ShowTrafficChart, Converter={StaticResource BoolToVis}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <UniformGrid Rows="5" VerticalAlignment="Stretch">
+                                <Border BorderBrush="{DynamicResource App.BorderSoft}" BorderThickness="0,1,0,0"/>
+                                <Border BorderBrush="{DynamicResource App.BorderSoft}" BorderThickness="0,1,0,0"/>
+                                <Border BorderBrush="{DynamicResource App.BorderSoft}" BorderThickness="0,1,0,0"/>
+                                <Border BorderBrush="{DynamicResource App.BorderSoft}" BorderThickness="0,1,0,0"/>
+                                <Border BorderBrush="{DynamicResource App.BorderSoft}" BorderThickness="0,1,0,0"/>
+                            </UniformGrid>
+
+                            <ItemsControl x:Name="TrafficBars" ItemsSource="{Binding Traffic}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <!-- One self-contained Grid per bar, with BOTH
+                                             rows star-weighted so the pair sums to a
+                                             whole and the bar's height IS the value.
+                                             Pooling these into one shared panel would
+                                             recycle rows between bars and draw a
+                                             chart that looks right and is wrong.
+
+                                             The spacer comes FIRST and the bar second:
+                                             Grid rows run top-down, so the bar has to
+                                             occupy the last row to stand on the
+                                             baseline. In row 0 every bar hangs from
+                                             the ceiling — which still reads as a
+                                             chart, and is upside down. -->
+                                        <Grid Margin="2,0">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="{Binding Remainder,
+                                                              Converter={StaticResource StarWeight}}"/>
+                                                <RowDefinition Height="{Binding Fraction,
+                                                              Converter={StaticResource StarWeight}}"/>
+                                            </Grid.RowDefinitions>
+                                            <!-- Grows from the baseline. The transform is
+                                                 declared here rather than in the Bar style:
+                                                 a Freezable in a Setter is one shared
+                                                 instance, so animating it would grow every
+                                                 bar in the chart at once from a single
+                                                 clock. The view animates these; see
+                                                 DashboardView.xaml.cs. -->
+                                            <Rectangle Grid.Row="1" Style="{StaticResource Bar}"
+                                                       RenderTransformOrigin="0.5,1">
+                                                <Rectangle.RenderTransform>
+                                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                                </Rectangle.RenderTransform>
+                                            </Rectangle>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding Traffic}" Margin="0,5,0,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="1"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Label}" FontSize="9"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource App.TextMuted}"
+                                               Visibility="{Binding ShowLabel,
+                                                            Converter={StaticResource BoolToVis}}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+
+                    <!-- The chart is withheld rather than drawn empty whenever it
+                         could not be honest. With reporting off, blocks still
+                         happen and simply are not written down, so an empty plot
+                         would read as "nothing tried". -->
+                    <Border Margin="0,16,0,0" Padding="16" CornerRadius="8"
+                            Visibility="{Binding ShowTrafficNotice, Converter={StaticResource BoolToVis}}">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{DynamicResource App.SurfaceSunken}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding AlertsReportingOff}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource App.WarnSoft}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="{Binding TrafficCaption}" Style="{StaticResource Body}"/>
+                    </Border>
+
+                    <!-- ══════════ what the engine did ══════════ -->
+                    <!-- The four counts that used to be a donut, as a line of
+                         numbers. The ring said the same four things twice — once
+                         as angles and once as a legend — and drew an empty ring
+                         on a healthy machine, which is the state this page is in
+                         most of the time.
+
+                         Built from the collection, so with nothing held there is
+                         no line at all rather than four blank labels. The dot
+                         colour is the collection's index: an ItemsControl
+                         template cannot hold one brush per position, and a brush
+                         handed out by a converter would freeze to whichever theme
+                         was active when it was looked up. -->
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ItemsControl ItemsSource="{Binding Breakdown}" AlternationCount="4"
+                                      VerticalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,18,0">
+                                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                                 Margin="0,0,7,0">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="{DynamicResource App.Chart1}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Value="1"
+                                                            Binding="{Binding (ItemsControl.AlternationIndex),
+                                                                      RelativeSource={RelativeSource AncestorType=ContentPresenter}}">
+                                                            <Setter Property="Fill" Value="{DynamicResource App.Chart2}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Value="2"
+                                                            Binding="{Binding (ItemsControl.AlternationIndex),
+                                                                      RelativeSource={RelativeSource AncestorType=ContentPresenter}}">
+                                                            <Setter Property="Fill" Value="{DynamicResource App.Chart3}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Value="3"
+                                                            Binding="{Binding (ItemsControl.AlternationIndex),
+                                                                      RelativeSource={RelativeSource AncestorType=ContentPresenter}}">
+                                                            <Setter Property="Fill" Value="{DynamicResource App.Chart4}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="{Binding Label}" FontSize="11"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource App.TextMuted}"/>
+                                        <TextBlock Text="{Binding Count}" FontSize="11" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" Margin="5,0,0,0"
+                                                   Foreground="{DynamicResource App.Text}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- States the window the counts cover, so they cannot be
+                             read as a complete history. -->
+                        <TextBlock Grid.Column="1" Text="{Binding BreakdownCaption}"
+                                   Style="{StaticResource Muted}" FontSize="11"
+                                   VerticalAlignment="Center" Margin="16,0,0,0"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════════ protection controls ══════════ -->
+            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                <StackPanel>
+                    <!-- The "each change asks for administrator approval" line
+                         that used to sit under this heading is now the heading's
+                         tooltip. It applies to the whole card rather than to any
+                         one switch, and at this height the card cannot afford a
+                         sentence that is not a measurement. -->
+                    <TextBlock Text="Protection controls" Style="{StaticResource H2}"
+                               ToolTip="Each change asks for administrator approval and takes effect immediately."/>
+
+                    <!-- The switches below report the engine's STORED
+                         configuration, which stays whatever it was whether or not
+                         anything is enforcing it. Without this warning an ON
+                         toggle over a missing driver — or over an engine the user
+                         has just stopped — reads as live protection. -->
+                    <Border Margin="0,6,0,10" Padding="12,8" CornerRadius="8"
+                            Background="{DynamicResource App.WarnSoft}"
+                            Visibility="{Binding ControlsWarningText,
+                                         Converter={StaticResource TextToVis}}">
+                        <TextBlock Style="{StaticResource Body}"
+                                   Text="{Binding ControlsWarningText}"/>
+                    </Border>
+
+                    <!-- Two columns rather than five stacked rows: the labels are
+                         short, and the switch is what the eye is looking for, not
+                         the paragraph under it. What each one actually does is the
+                         tooltip — that text was written for a reader who had the
+                         room, and it is still there for one who asks. -->
+                    <UniformGrid Columns="2">
+                        <Grid Margin="0,0,16,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Default-deny enforcement" Style="{StaticResource Body}"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Only trusted, signed apps may read token files."/>
+                            <CheckBox Grid.Column="1" Style="{StaticResource Switch}"
+                                      IsChecked="{Binding Enforcement}"
+                                      IsEnabled="{Binding IsInteractive}" VerticalAlignment="Center"
+                                      ToolTip="Only trusted, signed apps may read token files."/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="File blocking" Style="{StaticResource Body}"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Deny the opening of protected files. With this off nothing is denied — and so nothing is reported either."/>
+                            <CheckBox Grid.Column="1" Style="{StaticResource Switch}"
+                                      IsChecked="{Binding FileBlock}"
+                                      IsEnabled="{Binding IsInteractive}" VerticalAlignment="Center"
+                                      ToolTip="Deny the opening of protected files. With this off nothing is denied — and so nothing is reported either."/>
+                        </Grid>
+
+                        <Grid Margin="0,0,16,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Alert reporting" Style="{StaticResource Body}"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Report blocked attempts to this app and the log. Blocks still happen with this off — you just won't be told, and the chart above goes blank."/>
+                            <CheckBox Grid.Column="1" Style="{StaticResource Switch}"
+                                      IsChecked="{Binding AlertsEnabled}"
+                                      IsEnabled="{Binding IsInteractive}" VerticalAlignment="Center"
+                                      ToolTip="Report blocked attempts to this app and the log. Blocks still happen with this off — you just won't be told, and the chart above goes blank."/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Memory monitor" Style="{StaticResource Body}"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Terminate untrusted processes that try to read Discord or browser memory."/>
+                            <CheckBox Grid.Column="1" Style="{StaticResource Switch}"
+                                      IsChecked="{Binding MemoryMonitor}"
+                                      IsEnabled="{Binding IsInteractive}" VerticalAlignment="Center"
+                                      ToolTip="Terminate untrusted processes that try to read Discord or browser memory."/>
+                        </Grid>
+
+                        <Grid Margin="0,0,16,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Decoy token folder" Style="{StaticResource Body}"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Plant fake tokens as bait. A grabber that takes them reveals itself."/>
+                            <CheckBox Grid.Column="1" Style="{StaticResource Switch}"
+                                      IsChecked="{Binding Decoy}"
+                                      IsEnabled="{Binding IsInteractive}" VerticalAlignment="Center"
+                                      ToolTip="Plant fake tokens as bait. A grabber that takes them reveals itself."/>
+                        </Grid>
+
+                        <!-- The sixth cell. The grid is two columns wide and there
+                             are five switches; without this the last one would
+                             stretch across both. -->
+                        <Grid/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
